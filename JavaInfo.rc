@@ -1,0 +1,26 @@
+1 VERSIONINFO
+FILEVERSION 0,0,0,1
+PRODUCTVERSION 0,0,0,1
+FILEOS 0x4
+FILETYPE 1
+{
+  BLOCK "StringFileInfo"
+  {
+    BLOCK "040904E4"
+    {
+      VALUE "CompanyName", ""
+      VALUE "FileDescription", "JavaInfo.dll"
+      VALUE "FileVersion", "0.0.0.1"
+      VALUE "InternalName", "JavaInfo.dll"
+      VALUE "LegalCopyright", "Written by Bill Stewart (bstewart at iname.com)"
+      VALUE "OriginalFilename", "JavaInfo.dll"
+      VALUE "ProductName", ""
+      VALUE "ProductVersion", "0.0.0.1"
+    }
+  }
+
+  BLOCK "VarFileInfo"
+  {
+    VALUE "Translation", 0x0409, 0x04E4
+  }
+}
