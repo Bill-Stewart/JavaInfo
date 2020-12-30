@@ -36,6 +36,10 @@ The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use th
 
 Initial version.
 
+## 0.0.0.2 (2020-12-30)
+
+Misread Windows documentation on `SearchPathW` API function and allocated potentially insufficient buffer size. Fixed.
+
 # Functions
 
 This section documents the functions exported by JavaInfo.dll.

@@ -125,7 +125,7 @@ function FileSearch(const Name, DirList: unicodestring): unicodestring;
     NumChars: DWORD;
   begin
   result := '';
-  BufSize := MAX_PATH + SizeOf(widechar);
+  BufSize := MAX_PATH * SizeOf(widechar) + SizeOf(widechar);
   GetMem(FileName, BufSize);
   ToggleWow64FsRedirection();
   NumChars := SearchPathW(pwidechar(DirList),  // LPCSTR lpPath

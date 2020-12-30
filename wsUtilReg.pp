@@ -65,7 +65,7 @@ procedure UpdateFlags(var RootKey: HKEY; var AccessFlags: REGSAM);
     begin
     RootKey := RootKey and (not KEY_WOW64_64KEY);
     AccessFlags := AccessFlags or KEY_WOW64_64KEY;
-    end
+    end;
   end;
 
 function RegGetSubKeyNames(RootKey: HKEY;
