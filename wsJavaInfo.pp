@@ -23,16 +23,16 @@ unit
 
 interface
 
+// Gets whether specified binary is 64-bit or not in Is64Bit parameter; returns
+// true for success, or false for failure
+function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
+
 // If Java installation found, returns path of Java home directory
 function wsGetJavaHome(): unicodestring;
 
 // If Java installation found, returns version number of java.exe as a string
 // (a.b.c.d)
 function wsGetJavaVersion(): unicodestring;
-
-// If Java installation found, returns true if java.exe is 64-bit or false
-// otherwise
-function wsIsJava64Bit(): boolean;
 
 // Returns true if a Java installation was found, or false otherwise
 function wsIsJavaInstalled(): boolean;
@@ -49,7 +49,14 @@ uses
 
 var
   JavaHome, JavaVersion: unicodestring;
-  JavaIs64Bit: boolean;
+
+function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
+  var
+    BinaryType: word;
+  begin
+  result := GetBinaryType(FileName, BinaryType);
+  if result = 0 then Is64Bit := BinaryType <> IMAGE_FILE_MACHINE_I386;
+  end;
 
 // Tries 3 ways to detect a Java installation:
 // 1. Search JavaSoft registry subkeys and return JavaHome value for latest
@@ -146,7 +153,6 @@ procedure Init();
   // Initialize unit vars
   JavaHome := '';
   JavaVersion := '';
-  JavaIs64Bit := false;
   // Try to find Java home dir
   DirName := FindJavaHome();
   if DirName = '' then exit();
@@ -157,12 +163,8 @@ procedure Init();
   // Try to get version number 
   FileVersion := GetFileVersion(FileName);
   if FileVersion = '' then exit();
-  // Try to get binary type
-  if IsImage64Bit(FileName, JavaIs64Bit) then
-    begin
-    JavaHome := DirName;
-    JavaVersion := FileVersion;
-    end;
+  JavaHome := DirName;
+  JavaVersion := FileVersion;
   end;
 
 function wsGetJavaHome(): unicodestring;
@@ -175,12 +177,6 @@ function wsGetJavaVersion(): unicodestring;
   begin
   Init();
   result := JavaVersion;
-  end;
-
-function wsIsJava64Bit(): boolean;
-  begin
-  Init();
-  result := JavaIs64Bit;
   end;
 
 function wsIsJavaInstalled(): boolean;

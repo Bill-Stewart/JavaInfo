@@ -26,23 +26,27 @@ uses
   windows;
 
 type
-  TDLLIntFunc = function(): longint; stdcall;
-  TDLLStrFunc = function(Buffer: pwidechar; NumChars: DWORD): DWORD; stdcall;
+  TIsBinary64Bit = function(FileName: pwidechar; Is64Bit: PDWORD): DWORD; stdcall;
+  TIsJavaInstalled = function(): DWORD; stdcall;
+  TGetString = function(Buffer: pwidechar; NumChars: DWORD): DWORD; stdcall;
 
 var
   DLLHandle: HMODULE;
-  GetJavaHome, GetJavaVersion: TDLLStrFunc;
-  IsJava64Bit, IsJavaInstalled: TDLLIntFunc;
+  IsJavaInstalled: TIsJavaInstalled;
+  IsBinary64Bit: TIsBinary64Bit;
+  GetJavaHome, GetJavaVersion: TGetString;
+  JavaBinary: unicodestring;
+  Err, Is64Bit: DWORD;
 
-function GetString(var DLLStrFunc: TDLLStrFunc): unicodestring;
+function GetString(var Func: TGetString): unicodestring;
   var
     NumChars: DWORD;
     OutStr: unicodestring;
   begin
   result := '';
-  NumChars := DLLStrFunc(nil, 0);
+  NumChars := Func(nil, 0);
   SetLength(OutStr, NumChars);
-  if DLLStrFunc(pwidechar(OutStr), NumChars) > 0 then
+  if Func(pwidechar(OutStr), NumChars) > 0 then
     result := OutStr;
   end;
 
@@ -51,15 +55,23 @@ begin
   ExitCode := GetLastError();
   if ExitCode = 0 then
     begin
-    GetJavaHome := TDLLStrFunc(GetProcAddress(DLLHandle, 'GetJavaHome'));
-    GetJavaVersion := TDLLStrFunc(GetProcAddress(DLLHandle, 'GetJavaVersion'));
-    IsJava64Bit := TDLLIntFunc(GetProcAddress(DLLHandle, 'IsJava64Bit'));
-    IsJavaInstalled := TDLLIntFunc(GetProcAddress(DLLHandle, 'IsJavaInstalled'));
+    IsBinary64Bit := TIsBinary64Bit(GetProcAddress(DLLHandle, 'IsBinary64Bit'));
+    IsJavaInstalled := TIsJavaInstalled(GetProcAddress(DLLHandle, 'IsJavaInstalled'));
+    GetJavaHome := TGetString(GetProcAddress(DLLHandle, 'GetJavaHome'));
+    GetJavaVersion := TGetString(GetProcAddress(DLLHandle, 'GetJavaVersion'));
     if IsJavaInstalled() <> 0 then
       begin
-      WriteLn('Java home: ', GetString(GetJavaHome));
+      JavaBinary := GetString(GetJavaHome) + '\bin\java.exe';
+      WriteLn('Java binary: ', JavaBinary);
+      Write('Java binary type: ' );
+      Err := IsBinary64Bit(pwidechar(JavaBinary), @Is64Bit);
+      if Err = 0 then
+        begin
+        if Is64Bit = 0 then WriteLn('32-bit') else WriteLn('64-bit');
+        end
+      else
+        WriteLn('Error - ', Err);
       WriteLn('Java version: ', GetString(GetJavaVersion));
-      WriteLn('Is Java 64 bit? ', IsJava64Bit() = 1);
       end
     else
       WriteLn('Java not found');

@@ -75,6 +75,20 @@ uses
 type
   TStringFunction = function(): unicodestring;
 
+// Retrieves whether a specified binary is 64-bit or not to the Is64Bit
+// parameter. Returns 0 for success, or non-zero for failure. If successful,
+// value pointed to by Is64Bit will be 0 if not 64-bit, or 1 otherwise.
+function IsBinary64Bit(FileName: pwidechar; Is64Bit: PDWORD): DWORD; stdcall;
+  var
+    Is64: boolean;
+  begin
+  result := wsIsBinary64Bit(FileName, Is64);
+  if result = 0 then
+    begin
+    if Is64 then Is64Bit^ := 1 else Is64Bit^ := 0;
+    end;
+  end;
+
 // Copies Source to Dest.
 procedure CopyString(const Source: unicodestring; Dest: pwidechar);
   var
@@ -98,40 +112,34 @@ function GetString(var StringFunction: TStringFunction; Buffer: pwidechar; const
   result := Length(OutStr);
   end;
 
-// Gets Java home directory into buffer pointed to by Buffer.
-function GetJavaHome(Buffer: pwidechar; NumChars: DWORD): DWORD; stdcall;
+// Gets Java home directory into string buffer pointed to by PathName.
+function GetJavaHome(PathName: pwidechar; NumChars: DWORD): DWORD; stdcall;
   var
     StringFunction: TStringFunction;
   begin
   StringFunction := @wsGetJavaHome;
-  result := GetString(StringFunction, Buffer, NumChars);
+  result := GetString(StringFunction, PathName, NumChars);
   end;
 
-// Gets Java version string (a.b.c.d) into buffer pointed to by Buffer.
-function GetJavaVersion(Buffer: pwidechar; NumChars: DWORD): DWORD; stdcall;
+// Gets Java version string (a.b.c.d) into string buffer pointed to by Version.
+function GetJavaVersion(Version: pwidechar; NumChars: DWORD): DWORD; stdcall;
   var
     StringFunction: TStringFunction;
   begin
   StringFunction := @wsGetJavaVersion;
-  result := GetString(StringFunction, Buffer, NumChars);
-  end;
-
-// Returns 1 if the detected Java is 64-bit or 0 otherwise.
-function IsJava64Bit(): longint; stdcall;
-  begin
-  if wsIsJava64Bit() then result := 1 else result := 0;
+  result := GetString(StringFunction, Version, NumChars);
   end;
 
 // Returns 1 if Java installation detected or 0 otherwise.
-function IsJavaInstalled(): longint; stdcall;
+function IsJavaInstalled(): DWORD; stdcall;
   begin
   if wsIsJavaInstalled() then result := 1 else result := 0;
   end;
 
 exports
+  IsBinary64Bit,
+  IsJavaInstalled,
   GetJavaHome,
-  GetJavaVersion,
-  IsJava64Bit,
-  IsJavaInstalled;
+  GetJavaVersion;
 
 end.

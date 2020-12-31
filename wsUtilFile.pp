@@ -36,13 +36,13 @@ function FileExists(const FileName: unicodestring): boolean;
 // returns an empty string if nothing found
 function FileSearch(const Name, DirList: unicodestring): unicodestring;
 
+// Gets the specified file's binary type to the BinaryType parameters; returns
+// 0 for success, or non-zero for failure
+function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
+
 // Returns a version number string (a.b.c.d) for the named file; returns an
 // empty string if the function failed (e.g., no version information found)
 function GetFileVersion(const FileName: unicodestring): unicodestring;
-
-// Returns if the named executable image file is 64-bit in Is64Bit parameter;
-// returns true if function succeeded, or non-zero if it failed
-function IsImage64Bit(const FileName: unicodestring; var Is64Bit: boolean): boolean;
 
 // Concatenates Path1 to Path2 with only a single path separator between
 function JoinPath(Path1, Path2: unicodestring): unicodestring;
@@ -139,6 +139,23 @@ function FileSearch(const Name, DirList: unicodestring): unicodestring;
   FreeMem(FileName, BufSize);
   end;
 
+// Gets the specified file's binary type to the BinaryType parameters; returns
+// 0 for success, or non-zero for failure
+function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
+  var
+    pLoadedImage: PLOADED_IMAGE;
+  begin
+  ToggleWow64FsRedirection();
+  pLoadedImage := ImageLoad(pchar(UnicodeStringToString(FileName)), '');
+  ToggleWow64FsRedirection();
+  if Assigned(pLoadedImage) then result := 0 else result := GetLastError();
+  if result = 0 then
+    begin
+    BinaryType := pLoadedImage^.Fileheader^.FileHeader.Machine;
+    ImageUnload(pLoadedImage);
+    end;
+  end;
+
 function GetFileVersion(const FileName: unicodestring): unicodestring;
   var
     VerInfoSize, Handle: DWORD;
@@ -168,22 +185,6 @@ function GetFileVersion(const FileName: unicodestring): unicodestring;
     FreeMem(pBuffer, VerInfoSize);
     end;
   ToggleWow64FsRedirection();
-  end;
-
-function IsImage64Bit(const FileName: unicodestring; var Is64Bit: boolean): boolean;
-  var
-    pLoadedImage: PLOADED_IMAGE;
-  begin
-  result := false;
-  ToggleWow64FsRedirection();
-  pLoadedImage := ImageLoad(pchar(UnicodeStringToString(FileName)), '');
-  ToggleWow64FsRedirection();
-  result := Assigned(pLoadedImage);
-  if result then
-    begin
-    Is64Bit := pLoadedImage^.Fileheader^.FileHeader.Machine <> IMAGE_FILE_MACHINE_I386;
-    ImageUnload(pLoadedImage);
-    end;
   end;
 
 function JoinPath(Path1, Path2: unicodestring): unicodestring;
