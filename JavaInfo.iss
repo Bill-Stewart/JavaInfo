@@ -18,6 +18,10 @@
 ; demonstrating use of JavaInfo.dll; doesn't install anything; just displays a
 ; message box and exits
 
+#ifndef UNICODE
+  #error This script requires Unicode Inno Setup
+#endif
+
 [Setup]
 AppName=JavaInfo
 AppVersion=1
