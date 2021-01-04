@@ -1,19 +1,20 @@
-{ Copyright (C) 2020 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
 
-  This program is free software: you can redistribute it and/or modify it under
-  the terms of the GNU General Public License as published by the Free Software
-  Foundation, either version 3 of the License, or (at your option) any later
-  version.
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU Lesser General Public License as published by the Free
+  Software Foundation; either version 3 of the License, or (at your option) any
+  later version.
 
   This program is distributed in the hope that it will be useful, but WITHOUT
   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+  FOR A PARTICULAR PURPOSE. See the GNU General Lesser Public License for more
   details.
 
-  You should have received a copy of the GNU General Public License
+  You should have received a copy of the GNU Lesser General Public License
   along with this program. If not, see https://www.gnu.org/licenses/.
 
 }
+
 
 {$MODE OBJFPC}
 {$H+}
@@ -42,13 +43,17 @@ function ExpandEnvStrings(const Name: unicodestring): unicodestring;
     pBuffer: pwidechar;
   begin
   result := '';
-  // First call: Get buffer size needed
-  NumChars := ExpandEnvironmentStringsW(pwidechar(Name), nil, 0);
+  // Get number of characters needed for buffer
+  NumChars := ExpandEnvironmentStringsW(pwidechar(Name),  // LPCWSTR lpSrc
+                                        nil,              // LPWSTR  lpDst
+                                        0);               // DWORD   nSize
   if NumChars > 0 then
     begin
     BufSize := NumChars * SizeOf(widechar) + SizeOf(widechar);
     GetMem(pBuffer, BufSize);
-    if ExpandEnvironmentStringsW(pwidechar(Name), pBuffer, NumChars) > 0 then
+    if ExpandEnvironmentStringsW(pwidechar(Name),    // LPCWSTR lpSrc
+                                 pBuffer,            // LPWSTR  lpDst
+                                 NumChars) > 0 then  // DWORD   nSize
       result := pBuffer;
     FreeMem(pBuffer, BufSize);
     end;
@@ -66,11 +71,13 @@ function GetEnvVar(const Name: unicodestring): unicodestring;
                                       0);               // DWORD   nSize
   if NumChars > 0 then
     begin
-    BufSize := NumChars * SizeOf(widechar) + SizeOf(widechar);
+    // Account for terminating null
+    Inc(NumChars, 1);
+    BufSize := NumChars * SizeOf(widechar);
     GetMem(pBuffer, BufSize);
-    if GetEnvironmentVariableW(pwidechar(Name),   // LPCWSTR lpName
-                               pBuffer,           // LPWSTR  lpBuffer
-                               BufSize) > 0 then  // DWORD   nSize
+    if GetEnvironmentVariableW(pwidechar(Name),    // LPCWSTR lpName
+                               pBuffer,            // LPWSTR  lpBuffer
+                               NumChars) > 0 then  // DWORD   nSize
       result := pBuffer;
     FreeMem(pBuffer, BufSize);
     end;

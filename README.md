@@ -12,13 +12,17 @@ A Java Development Kit (JDK) or Java Runtime Environment (JRE) is required to ru
 
 JavaInfo.dll searches for Java in the following three ways:
 
-1. It searches the JavaSoft registry subkeys (`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`). If the registry data is found, it returns the `JavaHome` value for the latest version. On 64-bit platforms, JavaInfo.dll does not search for 32-bit versions of Java if any 64-bit versions are installed (it will only search for 32-bit Java versions if no 64-bit versions are installed).
+1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, or `JRE_HOME` environment variable (in that order).
 
-2. If the previous search fails, it uses the `JAVA_HOME`, `JDK_HOME`, or `JRE_HOME` environment variable (in that order) as the Java home directory.
+2. if the environment variables noted above are not defined, it searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft` and `HKEY_LOCAL_MACHINE\SOFTWARE\IBM` subkeys. If the registry data is found, it returns the `JavaHome` value for the latest version.
+
+3. If the above search fails, it searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu` subkey. If the registry data is found, it returns the `InstallationPath` value for the latest version.
+
+>  NOTE: On 64-bit platforms, JavaInfo.dll does not search the registry for 32-bit versions of Java if it finds any 64-bit versions in the registry, even if there is a newer 32-bit version installed.
 
 3. If the previous searches fail, it searches directories in the `Path` environment variable for `java.exe`. The Java home directory is the parent directory where `java.exe` is found. For example, if `C:\Program Files\AdoptOpenJDK\JRE11\bin` is in the path (and `java.exe` is found in that directory), the Java home directory is `C:\Program Files\AdoptOpenJDK\JRE11`.
 
-If one of the above searches succeeds, JavaInfo.dll looks for _home_`\bin\java.exe` (where _home_ is the Java home directory). If the file is found, it retrieves the version information from the `java.exe` file.
+If any of the above searches succeeds (in the above order), JavaInfo.dll looks for _home_`\bin\java.exe` (where _home_ is the Java home directory). If the file is found, it retrieves the version information from the `java.exe` file.
 
 If JavaInfo.dll is successful at finding the `java.exe` and retrieving its version information, then it considers Java to be installed.
 
@@ -43,7 +47,16 @@ Misread Windows documentation on `SearchPathW` API function and allocated potent
 ## 0.0.0.3 (2020-12-31)
 
 * Changed `IsJava64Bit()` function to `IsBinary64Bit()` function. The reason for this change is that it is useful to determine whether a binary (i.e., a `.exe` or `.dll` file) is 64-bit even when Java is not detected. For example, if the `IsJavaInstalled()` function returns 0 but an instance of Java is present, you can use the `IsBinary64Bit()` function to determine whether the Java instance is 64-bit if you know its path. An added benefit is that the `IsBinary64Bit()` function works on any Windows binary, not just Java binaries.
+
 * Included Inno Setup (https://www.jrsoftware.org/isinfo.php) sample script (`JavaInfo.iss`).
+
+## 0.0.0.4 (2021-01-04)
+
+* Updated license to less restrictive LGPL.
+
+* Changed search order to use environment variables first.
+
+* Added registry searches for IBM and Azul JDKs.
 
 # Functions
 

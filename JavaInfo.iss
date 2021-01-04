@@ -1,16 +1,16 @@
-; Copyright (C) 2020 by Bill Stewart (bstewart at iname.com)
+; Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
 ;
-; This program is free software: you can redistribute it and/or modify it under
-; the terms of the GNU General Public License as published by the Free Software
-; Foundation, either version 3 of the License, or (at your option) any later
-; version.
+; This program is free software; you can redistribute it and/or modify it under
+; the terms of the GNU Lesser General Public License as published by the Free
+; Software Foundation; either version 3 of the License, or (at your option) any
+; later version.
 ;
 ; This program is distributed in the hope that it will be useful, but WITHOUT
 ; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-; FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+; FOR A PARTICULAR PURPOSE. See the GNU General Lesser Public License for more
 ; details.
 ;
-; You should have received a copy of the GNU General Public License
+; You should have received a copy of the GNU Lesser General Public License
 ; along with this program. If not, see https://www.gnu.org/licenses/.
 
 ; JavaInfo.iss
@@ -18,6 +18,8 @@
 ; demonstrating use of JavaInfo.dll; doesn't install anything; just displays a
 ; message box and exits
 
+; Only works with Unicode versions of IS 5.6 or later, or IS 6.x or later (6.x
+; and later versions are all Unicode)
 #ifndef UNICODE
   #error This script requires Unicode Inno Setup
 #endif
