@@ -60,18 +60,18 @@ function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
 
 // Tries 4 ways to detect a Java installation:
 // 1. Use JAVA_HOME/JDK_HOME/JRE_HOME (in that order) environment variable
-// 2. If environment variable not defined, search JavaSoft and IBM registry
-//    subkeys and return JavaHome value for latest version
-// 3. If previous search fails, search Azul Systems registry subkey; if the
-//    registry data is found, returns InstallationPath value for latest version
-// 4. If previous searches fail, search directories in the path for java.exe
+// 2. If environment variables not defined, search the Path for java.exe
+// 3. If not found, search 'JavaSoft' and 'IBM' registry subkeys and return
+//    'JavaHome' value for latest version
+// 4. If not found, search 'Azul Systems' registry subkey and return
+//    'InstallationPath' value for latest version
 function FindJavaHome(): unicodestring;
   var
     StringList, SubKeyNames: TArrayOfString;
     I, J: longint;
     RootKey: HKEY;
     SubKeyExists: boolean;
-    SubKeyName, LatestVersion, CurrentVersion: unicodestring;
+    CurrentVersion, CurrentSubKeyName, LatestSubKeyName, LatestVersion, JavaHome: unicodestring;
   begin
   result := '';
   // Try #1: Check environment variables
@@ -82,16 +82,20 @@ function FindJavaHome(): unicodestring;
   for I := 0 to Length(StringList) - 1 do
     begin
     result := GetEnvVar(StringList[I]);
-    if result <> '' then
-      begin
-      while result[Length(result)] = '\' do
-        result := Copy(result, 1, Length(result) - 1);
-      break;
-      end;
+    if result <> '' then break;
     end;
-  // Try #2: Search the registry
+  // Try #2: Search the path
   if result = '' then
     begin
+    result := FileSearch('java.exe', GetEnvVar('Path'));
+    if result <> '' then
+      result := ExtractFileDir(ExtractFileDir(result));
+    end;
+  // Try #3: Search JDK/JRE in registy under JavaSoft and IBM
+  if result = '' then
+    begin
+    LatestSubKeyName := '';
+    LatestVersion := '0';
     RootKey := 0;
     SetLength(StringList, 6);
     StringList[0] := 'SOFTWARE\JavaSoft\Java Development Kit';
@@ -103,69 +107,67 @@ function FindJavaHome(): unicodestring;
     for I := 0 to Length(StringList) - 1 do
       begin
       SubKeyExists := false;
-      SubKeyName := StringList[I];
+      CurrentSubKeyName := StringList[I];
       if IsWin64() then
         begin
-        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, SubKeyName);
+        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, CurrentSubKeyName);
         if SubKeyExists then
           RootKey := HKEY_LOCAL_MACHINE_64
         else
           begin
-          SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, SubKeyName);
+          SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, CurrentSubKeyName);
           if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE_32;
           end;
         end
       else
         begin
-        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, SubKeyName);
+        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, CurrentSubKeyName);
         if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE;
         end;
       if SubKeyExists then
         begin
-        LatestVersion := '0';
-        if RegGetSubKeyNames(RootKey, SubKeyName, SubKeyNames) then
+        if RegGetSubKeyNames(RootKey, CurrentSubKeyName, SubKeyNames) then
           begin
           for J := 0 to Length(SubKeyNames) - 1 do
             begin
             if CompareVersionStrings(SubKeyNames[J], LatestVersion) > 0 then
+              begin
+              LatestSubKeyName := CurrentSubKeyName;
               LatestVersion := SubKeyNames[J];
-            end;
-          if RegQueryStringValue(RootKey, SubKeyName + '\' + LatestVersion, 'JavaHome', result) then
-            begin
-            while result[Length(result)] = '\' do
-              result := Copy(result, 1, Length(result) - 1);
-            break;
+              end;
             end;
           end;
         end;
       end;
+    if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName + '\' + LatestVersion, 'JavaHome', JavaHome)) and (JavaHome <> '') then
+      result := JavaHome;
     end;
-  // Try # 3: Look for Azul Zulu in registry
+  // Try # 4: Look for Azul Zulu in registry
   if result = '' then
     begin
+    LatestVersion := '0';
     RootKey := 0;
     SubKeyExists := false;
-    SubKeyName := 'SOFTWARE\Azul Systems\Zulu';
+    CurrentSubKeyName := 'SOFTWARE\Azul Systems\Zulu';
     if IsWin64() then
       begin
-      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, SubKeyName);
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, CurrentSubKeyName);
       if SubKeyExists then
         RootKey := HKEY_LOCAL_MACHINE_64
       else
         begin
-        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, SubKeyName);
+        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, CurrentSubKeyName);
         if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE_32;
         end;
       end
     else
       begin
-      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, SubKeyName);
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, CurrentSubKeyName);
       if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE;
       end;
     if SubKeyExists then
       begin
-      LatestVersion := '0';
-      if RegGetSubKeyNames(RootKey, SubKeyName, SubKeyNames) then
+      if RegGetSubKeyNames(RootKey, CurrentSubKeyName, SubKeyNames) then
         begin
         for I := 0 to Length(SubKeyNames) - 1 do
           begin
@@ -180,23 +182,14 @@ function FindJavaHome(): unicodestring;
             end;
           end;
         end;
-      if LatestVersion <> '0' then
-        begin
-        if RegQueryStringValue(RootKey, SubKeyName + '\zulu-' + LatestVersion, 'InstallationPath', result) then
-          begin
-          while result[Length(result)] = '\' do
-            result := Copy(result, 1, Length(result) - 1);
-          end;
-        end;
       end;
+    if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, CurrentSubKeyName + '\zulu-' + LatestVersion, 'InstallationPath', JavaHome)) and (JavaHome <> '') then
+      result := JavaHome;
     end;
-  // Try #4: Search the path
-  if result = '' then
-    begin
-    result := FileSearch('java.exe', GetEnvVar('Path'));
-    if result <> '' then
-      result := ExtractFileDir(ExtractFileDir(result));
-    end;
+  // Remove trailing separator character(s)
+  if result <> '' then
+    while result[Length(result)] = '\' do
+      result := Copy(result, 1, Length(result) - 1);
   end;
 
 procedure Init();

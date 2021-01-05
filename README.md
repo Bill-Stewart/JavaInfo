@@ -6,57 +6,43 @@ JavaInfo.dll is a Windows DLL (dynamically linked library) that provides informa
 
 Bill Stewart - bstewart at iname dot com
 
+# License
+
+JavaInfo.dll is covered by the GNU Lesser Public License (LPGL). See the file `LICENSE` for details.
+
+# Download
+
+https://github.com/Bill-Stewart/JavaInfo/releases/
+
 # Background
 
 A Java Development Kit (JDK) or Java Runtime Environment (JRE) is required to run Java applications, but there's not a standard way to detect whether Java is installed and details about it. JavaInfo.dll provides this information. For example, you can use JavaInfo.dll in an installer or a Java application launcher executable to detect if Java is installed.
 
-JavaInfo.dll searches for Java in the following three ways:
+JavaInfo.dll searches for Java in the following ways:
 
-1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, or `JRE_HOME` environment variable (in that order).
+1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, or `JRE_HOME` environment variable (in that order). The value of the environment variable is the Java home directory.
 
-2. if the environment variables noted above are not defined, it searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft` and `HKEY_LOCAL_MACHINE\SOFTWARE\IBM` subkeys. If the registry data is found, it returns the `JavaHome` value for the latest version.
+2. If the environment variables noted above are not defined, JavaInfo.dll searches the directories named in the `Path` environment variable for `java.exe`. The home directory is the parent directory of the directory where `java.exe` is found. For example, if `C:\Program Files\AdoptOpenJDK\JRE11\bin` is in the path (and `java.exe` is in that directory), the Java home directory is `C:\Program Files\AdoptOpenJDK\JRE11`.
 
-3. If the above search fails, it searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu` subkey. If the registry data is found, it returns the `InstallationPath` value for the latest version.
+3. If `java.exe` is not found in the `Path`, JavaInfo.dll searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft` and `HKEY_LOCAL_MACHINE\SOFTWARE\IBM` subkeys for Java installation information. If the registry data is found, it returns the `JavaHome` value for the latest version.
 
->  NOTE: On 64-bit platforms, JavaInfo.dll does not search the registry for 32-bit versions of Java if it finds any 64-bit versions in the registry, even if there is a newer 32-bit version installed.
+4. If the above search fails, JavaInfo.dll searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu` subkey for Java installation information. If the registry data is found, it returns the `InstallationPath` value for the latest version (this should be the Java home directory).
 
-3. If the previous searches fail, it searches directories in the `Path` environment variable for `java.exe`. The Java home directory is the parent directory where `java.exe` is found. For example, if `C:\Program Files\AdoptOpenJDK\JRE11\bin` is in the path (and `java.exe` is found in that directory), the Java home directory is `C:\Program Files\AdoptOpenJDK\JRE11`.
+> NOTE: On 64-bit platforms, JavaInfo.dll does not search the registry for 32-bit versions of Java if it finds any 64-bit versions in the registry, even if there is a newer 32-bit version installed. This only applies to the registry searches; if one of the environment variables points to a 32-bit Java installation, or if it finds a 32-bit copy of `java.exe` in the `Path`, JavaInfo.dll will use that and will not search the registry.
 
-If any of the above searches succeeds (in the above order), JavaInfo.dll looks for _home_`\bin\java.exe` (where _home_ is the Java home directory). If the file is found, it retrieves the version information from the `java.exe` file.
+If any of the above attempts succeed (in the above order), JavaInfo.dll looks for _home_`\bin\java.exe` (where _home_ is the Java home directory). If the file is found, it retrieves the file version information from `java.exe`.
 
-If JavaInfo.dll is successful at finding the `java.exe` and retrieving its version information, then it considers Java to be installed.
+If JavaInfo.dll is successful at finding `java.exe` and retrieving its file version information, then it considers Java to be installed.
 
-If JavaInfo.dll is successful at locating a Java installation, you can use the following paths to find Java binaries (where _home_ is the Java home directory):
+If JavaInfo.dll finds a Java installation, you can use the following paths to find Java binaries (where _javahome_ is the Java home directory):
 
-* _home_`\bin\java.exe` - Console-based Java executable
-* _home_`\bin\javaw.exe` - GUI-based Java executable
-* _home_`\bin\server\jvm.dll` - Java virtual machine DLL (used by web servlet containers such as Apache Tomcat)
+* _javahome_`\bin\java.exe` - Console-based Java executable
+* _javahome_`\bin\javaw.exe` - GUI-based Java executable
+* _javahome_`\bin\server\jvm.dll` - Java Virtual Machine DLL
 
 The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use the x64 DLL with x64 executables on x64 versions of Windows.
 
-# Version History
-
-## 0.0.0.1 (2020-12-29)
-
-Initial version.
-
-## 0.0.0.2 (2020-12-30)
-
-Misread Windows documentation on `SearchPathW` API function and allocated potentially insufficient buffer size. Fixed.
-
-## 0.0.0.3 (2020-12-31)
-
-* Changed `IsJava64Bit()` function to `IsBinary64Bit()` function. The reason for this change is that it is useful to determine whether a binary (i.e., a `.exe` or `.dll` file) is 64-bit even when Java is not detected. For example, if the `IsJavaInstalled()` function returns 0 but an instance of Java is present, you can use the `IsBinary64Bit()` function to determine whether the Java instance is 64-bit if you know its path. An added benefit is that the `IsBinary64Bit()` function works on any Windows binary, not just Java binaries.
-
-* Included Inno Setup (https://www.jrsoftware.org/isinfo.php) sample script (`JavaInfo.iss`).
-
-## 0.0.0.4 (2021-01-04)
-
-* Updated license to less restrictive LGPL.
-
-* Changed search order to use environment variables first.
-
-* Added registry searches for IBM and Azul JDKs.
+> NOTE: When you use the the 32-bit DLL on 64-bit Windows, it correctly handles 32-bit registry and file system redirection. (That is, the 32-bit DLL can correctly detect 64-bit Java installations and return the correct path.)
 
 # Functions
 
@@ -142,7 +128,7 @@ A pointer to a variable that receives a unicode string that contains the Java ho
 
 `NumChars`
 
-Specifies the number of characters needed to store the home directory string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `PathName` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate the buffer, then call the function a second time to retrieve the string.
+Specifies the number of characters needed to store the home directory string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `PathName` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
 
 ### Return Value
 
@@ -174,8 +160,40 @@ A pointer to a variable that receives a unicode string that contains the Java ve
 
 `NumChars`
 
-Specifies the number of characters needed to store the version number string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `Version` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate the buffer, then call the function a second time to retrieve the string.
+Specifies the number of characters needed to store the version number string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `Version` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
 
 ### Return Value
 
 The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
+
+# Version History
+
+## 0.0.0.5 (2021-01-05)
+
+* Updated search order to search `Path` before registry.
+
+* Cleaned up registry search (removed redundant code and improved robustness and readability).
+
+* Updated/clarified documentation and fixed a couple of typos.
+
+## 0.0.0.4 (2021-01-04)
+
+* Updated license to less restrictive LGPL.
+
+* Changed search order to use environment variables first.
+
+* Added registry searches for IBM and Azul JDKs.
+
+## 0.0.0.3 (2020-12-31)
+
+* Changed `IsJava64Bit()` function to `IsBinary64Bit()` function. The reason for this change is that it is useful to determine whether a binary (i.e., a `.exe` or `.dll` file) is 64-bit even when Java is not detected. For example, if the `IsJavaInstalled()` function returns 0 but an instance of Java is present, you can use the `IsBinary64Bit()` function to determine whether the Java instance is 64-bit if you know its path. An added benefit is that the `IsBinary64Bit()` function works on any Windows binary, not just Java binaries.
+
+* Included Inno Setup (https://www.jrsoftware.org/isinfo.php) sample script (`JavaInfo.iss`).
+
+## 0.0.0.2 (2020-12-30)
+
+Misread Windows documentation on `SearchPathW` API function and allocated potentially insufficient buffer size. Fixed.
+
+## 0.0.0.1 (2020-12-29)
+
+Initial version.
