@@ -49,7 +49,7 @@ function ExpandEnvStrings(const Name: unicodestring): unicodestring;
                                         0);               // DWORD   nSize
   if NumChars > 0 then
     begin
-    BufSize := NumChars * SizeOf(widechar) + SizeOf(widechar);
+    BufSize := NumChars * SizeOf(widechar);
     GetMem(pBuffer, BufSize);
     if ExpandEnvironmentStringsW(pwidechar(Name),    // LPCWSTR lpSrc
                                  pBuffer,            // LPWSTR  lpDst
@@ -71,8 +71,6 @@ function GetEnvVar(const Name: unicodestring): unicodestring;
                                       0);               // DWORD   nSize
   if NumChars > 0 then
     begin
-    // Account for terminating null
-    Inc(NumChars, 1);
     BufSize := NumChars * SizeOf(widechar);
     GetMem(pBuffer, BufSize);
     if GetEnvironmentVariableW(pwidechar(Name),    // LPCWSTR lpName

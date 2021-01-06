@@ -121,23 +121,32 @@ function FileExists(const FileName: unicodestring): boolean;
 
 function FileSearch(const Name, DirList: unicodestring): unicodestring;
   var
-    BufSize: DWORD;
-    FileName: pwidechar;
-    NumChars: DWORD;
+    NumChars, BufSize: DWORD;
+    pBuffer: pwidechar;
   begin
   result := '';
-  BufSize := MAX_PATH * SizeOf(widechar) + SizeOf(widechar);
-  GetMem(FileName, BufSize);
+  // Get number of characters needed for buffer
   ToggleWow64FsRedirection();
   NumChars := SearchPathW(pwidechar(DirList),  // LPCSTR lpPath
-                          pwidechar(Name),     // LPCSTR lpFileName
+                          pwideChar(Name),     // LPCSTR lpFilename
                           nil,                 // LPCSTR lpExtension
-                          BufSize,             // DWORD  nBufferLength
-                          FileName,            // LPSTR  lpBuffer
+                          0,                   // DWORD  nBufferLength
+                          nil,                 // LPSTR  lpBuffer
                           nil);                // LPSTR  lpFilePart
+  if NumChars > 0 then
+    begin
+    BufSize := NumChars * SizeOf(widechar);
+    GetMem(pBuffer, BufSize);
+    if SearchPathW(pwidechar(DirList),  // LPCSTR lpPath
+                   pwideChar(Name),     // LPCSTR lpFilename
+                   nil,                 // LPCSTR lpExtension
+                   NumChars,            // DWORD  nBufferLength
+                   pBuffer,             // LPSTR  lpBuffer
+                   nil) > 0 then        // LPSTR  lpFilePart
+      result := pBuffer;
+    FreeMem(pBuffer, BufSize);
+    end;
   ToggleWow64FsRedirection();
-  if NumChars > 0 then result := FileName;
-  FreeMem(FileName, BufSize);
   end;
 
 // Gets the specified file's binary type to the BinaryType parameters; returns

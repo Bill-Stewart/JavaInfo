@@ -75,20 +75,6 @@ uses
 type
   TStringFunction = function(): unicodestring;
 
-// Retrieves whether a specified binary is 64-bit or not to the Is64Bit
-// parameter. Returns 0 for success, or non-zero for failure. If successful,
-// value pointed to by Is64Bit will be 0 if not 64-bit, or 1 otherwise.
-function IsBinary64Bit(FileName: pwidechar; Is64Bit: PDWORD): DWORD; stdcall;
-  var
-    Is64: boolean;
-  begin
-  result := wsIsBinary64Bit(FileName, Is64);
-  if result = 0 then
-    begin
-    if Is64 then Is64Bit^ := 1 else Is64Bit^ := 0;
-    end;
-  end;
-
 // Copies Source to Dest.
 procedure CopyString(const Source: unicodestring; Dest: pwidechar);
   var
@@ -130,6 +116,20 @@ function GetJavaVersion(Version: pwidechar; NumChars: DWORD): DWORD; stdcall;
   result := GetString(StringFunction, Version, NumChars);
   end;
 
+// Retrieves whether a specified binary is 64-bit or not to the Is64Bit
+// parameter. Returns 0 for success, or non-zero for failure. If successful,
+// value pointed to by Is64Bit will be 0 if not 64-bit, or 1 otherwise.
+function IsBinary64Bit(FileName: pwidechar; Is64Bit: PDWORD): DWORD; stdcall;
+  var
+    Is64: boolean;
+  begin
+  result := wsIsBinary64Bit(FileName, Is64);
+  if result = 0 then
+    begin
+    if Is64 then Is64Bit^ := 1 else Is64Bit^ := 0;
+    end;
+  end;
+
 // Returns 1 if Java installation detected or 0 otherwise.
 function IsJavaInstalled(): DWORD; stdcall;
   begin
@@ -137,9 +137,9 @@ function IsJavaInstalled(): DWORD; stdcall;
   end;
 
 exports
-  IsBinary64Bit,
-  IsJavaInstalled,
   GetJavaHome,
-  GetJavaVersion;
+  GetJavaVersion,
+  IsBinary64Bit,
+  IsJavaInstalled;
 
 end.

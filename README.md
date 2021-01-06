@@ -1,6 +1,6 @@
 # JavaInfo.dll
 
-JavaInfo.dll is a Windows DLL (dynamically linked library) that provides information about whether Java is installed and its properties.
+JavaInfo.dll is a Windows DLL (dynamically linked library) that provides information about Java installations.
 
 # Author
 
@@ -20,19 +20,15 @@ A Java Development Kit (JDK) or Java Runtime Environment (JRE) is required to ru
 
 JavaInfo.dll searches for Java in the following ways:
 
-1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, or `JRE_HOME` environment variable (in that order). The value of the environment variable is the Java home directory.
+1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, and `JRE_HOME` environment variables (in that order). The value of the environment variable is the Java home directory.
 
 2. If the environment variables noted above are not defined, JavaInfo.dll searches the directories named in the `Path` environment variable for `java.exe`. The home directory is the parent directory of the directory where `java.exe` is found. For example, if `C:\Program Files\AdoptOpenJDK\JRE11\bin` is in the path (and `java.exe` is in that directory), the Java home directory is `C:\Program Files\AdoptOpenJDK\JRE11`.
 
-3. If `java.exe` is not found in the `Path`, JavaInfo.dll searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft` and `HKEY_LOCAL_MACHINE\SOFTWARE\IBM` subkeys for Java installation information. If the registry data is found, it returns the `JavaHome` value for the latest version.
+3. If `java.exe` is not found in the `Path`, JavaInfo.dll searches in the registry for the home directory of the latest Java version installed. (See [Registry Searches](#registry-searches), below, for details on the registry searches.)
 
-4. If the above search fails, JavaInfo.dll searches the registry in the `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu` subkey for Java installation information. If the registry data is found, it returns the `InstallationPath` value for the latest version (this should be the Java home directory).
+> NOTE: On 64-bit platforms, JavaInfo.dll does not search the registry for 32-bit versions of Java if it finds any 64-bit versions in the registry, even if there is a newer 32-bit version installed. This only applies to the registry searches; if one of the environment variables points to a 32-bit Java installation, or if JavaInfo.dll finds a 32-bit copy of `java.exe` in the `Path`, JavaInfo.dll doesn't search the registry.
 
-> NOTE: On 64-bit platforms, JavaInfo.dll does not search the registry for 32-bit versions of Java if it finds any 64-bit versions in the registry, even if there is a newer 32-bit version installed. This only applies to the registry searches; if one of the environment variables points to a 32-bit Java installation, or if it finds a 32-bit copy of `java.exe` in the `Path`, JavaInfo.dll will use that and will not search the registry.
-
-If any of the above attempts succeed (in the above order), JavaInfo.dll looks for _home_`\bin\java.exe` (where _home_ is the Java home directory). If the file is found, it retrieves the file version information from `java.exe`.
-
-If JavaInfo.dll is successful at finding `java.exe` and retrieving its file version information, then it considers Java to be installed.
+If JavaInfo.dll succeeds in finding the Java home directory using any of the above techniques, it then looks for the file _javahome_`\bin\java.exe` (where _javahome_ is the Java home directory). If the file exists, it retrieves the file's version information. If the file exists and JavaInfo.dll is successful at retrieving the file's version information, then it considers Java to be installed.
 
 If JavaInfo.dll finds a Java installation, you can use the following paths to find Java binaries (where _javahome_ is the Java home directory):
 
@@ -43,6 +39,17 @@ If JavaInfo.dll finds a Java installation, you can use the following paths to fi
 The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use the x64 DLL with x64 executables on x64 versions of Windows.
 
 > NOTE: When you use the the 32-bit DLL on 64-bit Windows, it correctly handles 32-bit registry and file system redirection. (That is, the 32-bit DLL can correctly detect 64-bit Java installations and return the correct path.)
+
+# Registry Searches
+
+JavaInfo.dll searches in the following registry locations for the location of the Java home directory:
+
+`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\IBM`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`
+
+If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the detection can be improved.
 
 # Functions
 
@@ -167,6 +174,14 @@ Specifies the number of characters needed to store the version number string, no
 The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
 
 # Version History
+
+## 1.0.0.0 (2021-01-06)
+
+* Split registry searching code into separate functions to improve readability/maintenance.
+
+* Added AdoptOpenJDK registry key search.
+
+* Fixed buffer allocation/hang issue that could occur when searching the `Path` environment variable (regression bug from v0.0.0.2).
 
 ## 0.0.0.5 (2021-01-05)
 

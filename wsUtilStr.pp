@@ -55,7 +55,7 @@ function StrToIntDef(const S: unicodestring; const Def: longint): longint;
   end;
 
 // Compares two version number strings; returns:
-// -1 if V1 < V2, 0 if V1 = V2, or 1 if V1 > V2
+// < 0 if V1 < V2, 0 if V1 = V2, or > 0 if V1 > V2
 function CompareVersionStrings(V1, V2: unicodestring): longint;
   var
     P, N1, N2: longint;
