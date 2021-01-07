@@ -53,7 +53,7 @@ function RegQueryStringValue(RootKey: HKEY;
 implementation
 
 // Updates RootKey and AccessFlags appropriately if using _32 or _64 RootKey
-procedure UpdateFlags(var RootKey: HKEY; var AccessFlags: REGSAM);
+procedure UpdateRootKeyAndFlags(var RootKey: HKEY; var AccessFlags: REGSAM);
   begin
   if (RootKey and KEY_WOW64_32KEY) <> 0 then
     begin
@@ -83,7 +83,7 @@ function RegGetSubKeyNames(RootKey: HKEY;
     MaxSubKeyNameLen2: DWORD;
   begin
   AccessFlags := KEY_READ;
-  UpdateFlags(RootKey, AccessFlags);
+  UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,                // HKEY   hKey
                           pwidechar(SubKeyName),  // LPCSTR lpSubKey
                           0,                      // DWORD  ulOptions
@@ -105,28 +105,31 @@ function RegGetSubKeyNames(RootKey: HKEY;
                                nil) = 0;           // PFILETIME lpftLastWriteTime
     // Set dynamic array size
     SetLength(Names, NumSubKeys);
-    // lpcbMaxValueNameLen doesn't include terminating null
-    MaxSubKeyNameLen := MaxSubKeyNameLen * SizeOf(widechar) + SizeOf(widechar);
-    // Each call to RegEnumKeyEx will use this buffer
-    GetMem(Name, MaxSubKeyNameLen);
-    // Enumerate subkey names
-    for I := 0 to NumSubKeys - 1 do
+    if NumSubKeys > 0 then
       begin
-      // Reset max buffer size on each call because RegEnumKeyExW updates it
-      MaxSubKeyNameLen2 := MaxSubKeyNameLen;
-      if RegEnumKeyExW(hkHandle,            // HKEY      hKey
-                       I,                   // DWORD     dwIndex
-                       Name,                // LPSTR     lpName
-                       @MaxSubKeyNameLen2,  // LPDWORD   lpcchName
-                       nil,                 // LPDWORD   lpReserved
-                       nil,                 // LPSTR     lpClass
-                       nil,                 // LPDWORD   lpcchClass
-                       nil) = 0 then        // PFILETIME lpftLastWriteTime
-        Names[I] := Name
-      else
-        Names[I] := '';
+      // lpcbMaxValueNameLen doesn't include terminating null
+      MaxSubKeyNameLen := MaxSubKeyNameLen * SizeOf(widechar) + SizeOf(widechar);
+      // Each call to RegEnumKeyEx will use this buffer
+      GetMem(Name, MaxSubKeyNameLen);
+      // Enumerate subkey names
+      for I := 0 to NumSubKeys - 1 do
+        begin
+        // Reset max buffer size on each call because RegEnumKeyExW updates it
+        MaxSubKeyNameLen2 := MaxSubKeyNameLen;
+        if RegEnumKeyExW(hkHandle,            // HKEY      hKey
+                        I,                   // DWORD     dwIndex
+                        Name,                // LPSTR     lpName
+                        @MaxSubKeyNameLen2,  // LPDWORD   lpcchName
+                        nil,                 // LPDWORD   lpReserved
+                        nil,                 // LPSTR     lpClass
+                        nil,                 // LPDWORD   lpcchClass
+                        nil) = 0 then        // PFILETIME lpftLastWriteTime
+          Names[I] := Name
+        else
+          Names[I] := '';
+        end;
+      FreeMem(Name, MaxSubKeyNameLen);
       end;
-    FreeMem(Name, MaxSubKeyNameLen);
     RegCloseKey(hkHandle);
     end;
   end;
@@ -138,7 +141,7 @@ function RegKeyExists(RootKey: HKEY;
     hkHandle: HANDLE;
   begin
   AccessFlags := KEY_READ;
-  UpdateFlags(RootKey, AccessFlags);
+  UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,                // HKEY   hKey
                           pwidechar(SubKeyName),  // LPCSTR lpSubKey
                           0,                      // DWORD  ulOptions
@@ -158,7 +161,7 @@ function RegQueryStringValue(RootKey: HKEY;
     pData: pointer;
   begin
   AccessFlags := KEY_READ;
-  UpdateFlags(RootKey, AccessFlags);
+  UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,                // HKEY   hKey
                           pwidechar(SubKeyName),  // LPCSTR lpSubKey
                           0,                      // DWORD  ulOptions
@@ -178,7 +181,6 @@ function RegQueryStringValue(RootKey: HKEY;
       // Must be REG_SZ or REG_EXPAND_SZ
       if (ValueType = REG_SZ) or (ValueType = REG_EXPAND_SZ) then
         begin
-        // Allocate buffer
         GetMem(pData, ValueSize);
         // Second call: Get value data
         result := RegQueryValueExW(hkHandle,              // HKEY    hKey

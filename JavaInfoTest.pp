@@ -57,7 +57,7 @@ function GetString(var Func: TGetString): unicodestring;
 
 begin
   DLLHandle := LoadLibrary('JavaInfo.dll');
-  ExitCode := GetLastError();
+  if DLLHandle = 0 then ExitCode := GetLastError() else ExitCode := 0;
   if ExitCode <> 0 then
     begin
     MsgBox('Unable to load JavaInfo.dll.', MB_ICONERROR);

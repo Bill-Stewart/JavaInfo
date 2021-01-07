@@ -149,8 +149,6 @@ function FileSearch(const Name, DirList: unicodestring): unicodestring;
   ToggleWow64FsRedirection();
   end;
 
-// Gets the specified file's binary type to the BinaryType parameters; returns
-// 0 for success, or non-zero for failure
 function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
   var
     pLoadedImage: PLOADED_IMAGE;

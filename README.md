@@ -49,7 +49,7 @@ JavaInfo.dll searches in the following registry locations for the location of th
 `HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`
 
-If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the detection can be improved.
+If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the registry detection can be improved.
 
 # Functions
 
@@ -174,6 +174,12 @@ Specifies the number of characters needed to store the version number string, no
 The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
 
 # Version History
+
+## 1.1.0.0 (2021-01-07)
+
+* Fixed: Registry search now returns the latest version across all registry searches instead of stopping after one subkey.
+
+* Fixed: Unhandled exception in edge case where no registry subkeys present to enumerate.
 
 ## 1.0.0.0 (2021-01-06)
 
