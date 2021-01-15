@@ -27,7 +27,7 @@ type
   TJavaDetectionType = (JDNone,JDEnvironment,JDPath,JDJavaSoft,JDIBM,JDAdoptOpenJDK,JDZulu);
 
 // Gets whether specified binary is 64-bit or not in Is64Bit parameter; returns
-// true for success, or false for failure
+// 0 for success, or non-zero for failure
 function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
 
 // If Java installation found, returns path of Java home directory
@@ -39,6 +39,10 @@ function wsGetJavaVersion(): unicodestring;
 
 // Returns true if a Java installation was found, or false otherwise
 function wsIsJavaInstalled(): boolean;
+
+// Gets whether the installed Java version is at least the specified version
+// in the VersionOK parameter; returns true for success, or false otherwise
+function wsIsJavaMinimumVersion(Version: unicodestring; var VersionOK: boolean): boolean;
 
 // Diagnostic: returns Java detection type
 function wsGetJavaDetectionType(): TJavaDetectionType;
@@ -404,6 +408,14 @@ function wsGetJavaVersion(): unicodestring;
 function wsIsJavaInstalled(): boolean;
   begin
   result := (JavaHome <> '') and (JavaVersion <> '');
+  end;
+
+function wsIsJavaMinimumVersion(Version: unicodestring; var VersionOK: boolean): boolean;
+  begin
+  Version := ExpandVersionString(Version);
+  result := Version <> '';
+  if result then
+    VersionOK := CompareVersionStrings(JavaVersion, Version) >= 0;
   end;
 
 function wsGetJavaDetectionType(): TJavaDetectionType;

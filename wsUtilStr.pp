@@ -30,6 +30,13 @@ type
 // < 0 if V1 < V2, 0 if V1 = V2, or > 0 if V1 > V2
 function CompareVersionStrings(V1, V2: unicodestring): longint;
 
+// Expands a version string into a full 4-part version string; missing parts
+// are returned as zeroes; e.g., '10' returns '10.0.0.0', '11.1' returns
+// '11.1.0.0', and '12.1.2' returns '12.1.2.0'; returns an empty string if
+// no version number or an invalid version number is supplied; each part must
+// be in the range 0..65535 (16-bit unsigned - word)
+function ExpandVersionString(const Version: unicodestring): unicodestring;
+
 // Scans a string for digit characters and returns found digits in OutputStr;
 // returns false if InputStr contains no digits
 function GetDigitsInString(const InputStr: unicodestring; var OutputStr: unicodestring): boolean;
@@ -45,7 +52,10 @@ function RemoveBackslashUnlessRoot(S: unicodestring): unicodestring;
 // conversion fails, returns Def
 function StrToIntDef(const S: unicodestring; const Def: longint): longint;
 
-// Converts the specified unicode string to a regular (multi-byte) string and
+// Converts the specified string to a Unicode string
+function StringToUnicodeString(const S: string): unicodestring;
+
+// Converts the specified Unicode string to a regular (multi-byte) string and
 // returns the resulting multi-byte string
 function UnicodeStringToString(const S: unicodestring): string;
 
@@ -102,6 +112,115 @@ function CompareVersionStrings(V1, V2: unicodestring): longint;
     end;
   end;
 
+// Returns the position of SubString in S starting at Offset; returns 0
+// if SubString is not found in S
+function PosEx(const SubString, S: unicodestring; Offset: longint): longint;
+  var
+    SubLen, MaxLen, I: longint;
+    FirstChar: widechar;
+    pFirstChar: pwidechar;
+  begin
+  result := 0;
+  SubLen := Length(SubString);
+  if (SubLen > 0) and (Offset > 0) and (Offset <= Length(S)) then
+    begin
+    MaxLen := Length(S) - SubLen;
+    FirstChar := SubString[1];
+    I := IndexWord(S[Offset], Length(S) - Offset + 1, word(FirstChar));
+    while (I >= 0) and ((Offset + I - 1) <= MaxLen) do
+      begin
+      pFirstChar := @S[Offset + I];
+      if CompareWord(SubString[1], pFirstChar^, SubLen) = 0 then exit(Offset + I);
+      Offset := Offset + I + 1;
+      I := IndexWord(S[Offset], Length(S) - Offset + 1, word(FirstChar));
+      end;
+    end;
+  end;
+
+// Returns the number of times SubString appears in S
+function CountSubstring(const SubString, S: unicodestring): longint;
+  var
+    P: longint;
+  begin
+  result := 0;
+  P := PosEx(SubString, S, 1);
+  while P <> 0 do
+    begin
+    Inc(result);
+    P := PosEx(SubString, S, P + Length(SubString));
+    end;
+  end;
+
+// Splits S into the Dest array using Delim as a delimiter
+procedure StrSplit(S, Delim: unicodestring; var Dest: TArrayOfString);
+  var
+    I, P: longint;
+  begin
+  I := CountSubstring(Delim, S);
+  if I = 0 then exit();
+  SetLength(Dest, I + 1);
+  for I := 0 to Length(Dest) - 1 do
+    begin
+    P := Pos(Delim, S);
+    if P > 0 then
+      begin
+      Dest[I] := Copy(S, 1, P - 1);
+      Delete(S, 1, P + Length(Delim) - 1);
+      end
+    else
+      Dest[I] := S;
+    end;
+  end;
+
+// Converts a word (16-bit unsigned integer) to a Unicode string
+function WordToStr(const W: word): unicodestring;
+  begin
+  Str(W, result);
+  end;
+
+function ExpandVersionString(const Version: unicodestring): unicodestring;
+  const
+    VERSION_PARTS = 4;
+    MAXWORD = 65535;
+  var
+    Part, PartCount, I: longint;
+    OutParts: array[0..VERSION_PARTS - 1] of word = (0,0,0,0);
+    InParts: TArrayOfString;
+  begin
+  result := '';
+  // Special case: empty string
+  if Length(Version) = 0 then exit();
+  // Special case: no delimiters
+  if Pos('.', Version) = 0 then
+    begin
+    Part := StrToIntDef(Version, -1);
+    // Return empty string (error) if out of range
+    if (Part < 0) or (Part > MAXWORD) then exit();
+    result := Version + '.0.0.0';
+    exit();
+    end;
+  // Split input version string into array
+  StrSplit(Version, '.', InParts);
+  // Version number can contain up to 4 parts
+  if Length(InParts) > 4 then exit();
+  // Copy up to VERSION_PARTS to output array
+  PartCount := 0;
+  for I := 0 to Length(InParts) - 1 do
+    begin
+    if PartCount < VERSION_PARTS then
+      begin
+      Part := StrToIntDef(InParts[I], -1);
+      if (Part < 0) or (Part > MAXWORD) then exit();
+      OutParts[PartCount] := word(StrToIntDef(InParts[I], -1));
+      Inc(PartCount);
+      end;
+    end;
+  // Construct result string
+  result := WordToStr(OutParts[0]);
+  for I := 1 to VERSION_PARTS - 1 do
+    result := result + '.' + WordToStr(OutParts[I]);
+  end;
+
 function GetDigitsInString(const InputStr: unicodestring; var OutputStr: unicodestring): boolean;
   const
     Digits: set of char = ['0'..'9'];
@@ -131,6 +250,34 @@ function RemoveBackslashUnlessRoot(S: unicodestring): unicodestring;
     while S[Length(S)] = '\' do
       SetLength(S, Length(S) - 1);
     result := S;
+    end;
+  end;
+
+function StringToUnicodeString(const S: string): unicodestring;
+  var
+    NumChars, BufSize: DWORD;
+    pBuffer: pwidechar;
+  begin
+  result := '';
+  // Get number of characters needed for buffer
+  NumChars := MultiByteToWideChar(CP_OEMCP,  // UINT   CodePage
+                                  0,         // DWORD  dwFlags
+                                  pchar(S),  // LPCCH  lpMultiByteStr
+                                  -1,        // int    cbMultiByte
+                                  nil,       // LPWSTR lpWideCharStr
+                                  0);        // int    cchWideChar
+  if NumChars > 0 then
+    begin
+    BufSize := NumChars * SizeOf(widechar);
+    GetMem(pBuffer, BufSize);
+    if MultiByteToWideChar(CP_OEMCP,          // UINT   CodePage
+                           0,                 // DWORD  dwFlags
+                          pchar(S),           // LPCCH  lpMultiByteStr
+                          -1,                 // int    cbMultiByte
+                          pBuffer,            // LPWSTR lpWideCharStr
+                          NumChars) > 0 then  // int    cchWideChar
+      result := pBuffer;
+    FreeMem(pBuffer, BufSize);
     end;
   end;
 

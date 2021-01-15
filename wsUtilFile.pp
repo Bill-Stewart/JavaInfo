@@ -37,9 +37,12 @@ function FileExists(const FileName: unicodestring): boolean;
 // returns an empty string if nothing found
 function FileSearch(const Name, DirList: unicodestring): unicodestring;
 
-// Gets the specified file's binary type to the BinaryType parameters; returns
+// Gets the specified file's binary type to the BinaryType parameter; returns
 // 0 for success, or non-zero for failure
 function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
+
+// Gets the path for the current running executable
+function GetExecutablePath(): unicodestring;
 
 // Returns a version number string (a.b.c.d) for the named file; returns an
 // empty string if the function failed (e.g., no version information found)
@@ -162,6 +165,25 @@ function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWO
     BinaryType := pLoadedImage^.Fileheader^.FileHeader.Machine;
     ImageUnload(pLoadedImage);
     end;
+  end;
+
+function GetExecutablePath(): unicodestring;
+  var
+    NumChars, BufSize: DWORD;
+    pBuffer: pwidechar;
+  begin
+  result := '';
+  // GetModuleFileNameW() doesn't let us determine the needed length of the
+  // string by setting third parameter to zero, so just create a 64K buffer
+  NumChars := 32768;
+  BufSize := NumChars * SizeOf(widechar);
+  GetMem(pBuffer, BufSize);
+  NumChars := GetModuleFileNameW(0,          // HMODULE hModule
+                                 pBuffer,    // LPWSTR  lpFilename
+                                 NumChars);  // DWORD   nSize
+  if (NumChars > 0) and (GetLastError() = ERROR_SUCCESS) then
+    result := pBuffer;
+  FreeMem(pBuffer, BufSize);
   end;
 
 function GetFileVersion(const FileName: unicodestring): unicodestring;

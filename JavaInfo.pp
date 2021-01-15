@@ -70,6 +70,7 @@ library
   JavaInfo;
 
 uses
+  windows,
   wsJavaInfo;
 
 type
@@ -136,10 +137,28 @@ function IsJavaInstalled(): DWORD; stdcall;
   if wsIsJavaInstalled() then result := 1 else result := 0;
   end;
 
+// Retrieves whether the installed Java version is at least the specified
+// version to the VersionOK parameter. Returns 0 for success, or non-zero for
+// failure. If successful, the value pointed to by VersionOK will be 1 if the
+// installed Java version is at least the specified version, or 0 otherwise.
+function IsJavaMinimumVersion(Version: pwidechar; VersionOK: PDWORD): DWORD; stdcall;
+  var
+    IsOK: boolean;
+  begin
+  if wsIsJavaMinimumVersion(Version, IsOK) then
+    begin
+    result := ERROR_SUCCESS;
+    if IsOK then VersionOK^ := 1 else VersionOK^ := 0;
+    end
+  else
+    result := ERROR_INVALID_PARAMETER;
+  end;
+
 exports
   GetJavaHome,
   GetJavaVersion,
   IsBinary64Bit,
-  IsJavaInstalled;
+  IsJavaInstalled,
+  IsJavaMinimumVersion;
 
 end.

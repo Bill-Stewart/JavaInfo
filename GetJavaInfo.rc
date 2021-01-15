@@ -9,11 +9,11 @@ FILETYPE 1
     BLOCK "040904E4"
     {
       VALUE "CompanyName", ""
-      VALUE "FileDescription", "JavaInfo.dll"
+      VALUE "FileDescription", "GetJavaInfo.exe"
       VALUE "FileVersion", "1.2.0.0"
-      VALUE "InternalName", "JavaInfo.dll"
+      VALUE "InternalName", "GetJavaInfo.exe"
       VALUE "LegalCopyright", "Copyright 2020-2021 by Bill Stewart (bstewart at iname.com)"
-      VALUE "OriginalFilename", "JavaInfo.dll"
+      VALUE "OriginalFilename", "GetJavaInfo.exe"
       VALUE "ProductName", ""
       VALUE "ProductVersion", "1.2.0.0"
     }
