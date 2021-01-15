@@ -44,9 +44,9 @@ The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use th
 
 JavaInfo.dll searches in the following registry locations for the location of the Java home directory:
 
-`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`  
-`HKEY_LOCAL_MACHINE\SOFTWARE\IBM`  
-`HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`
+`HKEY_LOCAL_MACHINE\SOFTWARE\IBM`
+`HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`
 `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`
 
 If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the registry detection can be improved.
@@ -77,7 +77,7 @@ function IsBinary64Bit(FileName: pwidechar; Is64Bit: PDWORD): DWORD;
 
 `FileName`
 
-A unicode string containing the name of a binary file (exe or dll).
+A Unicode string containing the name of a binary file (exe or dll).
 
 `Is64Bit`
 
@@ -111,6 +111,38 @@ The `IsJavaInstalled()` function returns zero if no Java installations were dete
 
 ---
 
+## IsJavaMinimumVersion()
+
+The `IsJavaMinimumVersion()` function checks whether the installed Java version is at least a specified version.
+
+### Syntax
+
+C/C++:
+```
+DWORD IsJavaMinimumVersion(LPWSTR Version, PDWORD VersionOK);
+```
+
+Pascal:
+```
+function IsJavaMinimumVersion(Version: pwidechar; VersionOK: PDWORD): DWORD;
+```
+
+### Parameters
+
+`Version`
+
+A Unicode string containing a version number. The string can contain from 1 to 4 decimal numbers separated by `.` characters.
+
+`VersionOK`
+
+A pointer to a variable that gets set to 1 if the installed Java version is at least the version specified in the `Version` parameter, or 0 otherwise. The value of this variable is not defined if the `IsJavaMinimumVersion()` function fails.
+
+### Return Value
+
+The `IsJavaMinimumVersion()` function returns 0 for success, or non-zero for failure. If the version specified in the `Version` parameter is not a valid version number string, this function will return error code 87 (`ERROR_INVALID_PARAMETER`).
+
+---
+
 ## GetJavaHome
 
 The `GetJavaHome()` function gets the Java home directory.
@@ -131,7 +163,7 @@ function GetJavaHome(PathName: pwidechar; NumChars: DWORD): DWORD;
 
 `PathName`
 
-A pointer to a variable that receives a unicode string that contains the Java home directory.
+A pointer to a variable that receives a Unicode string that contains the Java home directory.
 
 `NumChars`
 
@@ -163,7 +195,7 @@ function GetJavaVersion(Version: pwidechar; NumChars: DWORD): DWORD;
 
 `Version`
 
-A pointer to a variable that receives a unicode string that contains the Java version string.
+A pointer to a variable that receives a Unicode string that contains the Java version string.
 
 `NumChars`
 
@@ -174,6 +206,16 @@ Specifies the number of characters needed to store the version number string, no
 The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
 
 # Version History
+
+## 1.2.0.0 (2021-01-15)
+
+* Added the `IsJavaMinimumVersion()` function.
+
+* Added GetJavaInfo.exe that implements the JavaInfo.dll code as a console (command-line) utility. Run `GetJavaInfo -h` to display the help information.
+
+* Enhanced the `JavaInfo.iss` Inno Setup sample script to use the `IsJavaMinimumVersion()` function.
+
+* Added sample PowerShell script to illustrate using .NET P/Invoke to call the JavaInfo.dll functions.
 
 ## 1.1.0.0 (2021-01-07)
 
