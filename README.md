@@ -44,9 +44,9 @@ The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use th
 
 JavaInfo.dll searches in the following registry locations for the location of the Java home directory:
 
-`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`
-`HKEY_LOCAL_MACHINE\SOFTWARE\IBM`
-`HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`
+`HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\IBM`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`
 
 If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the registry detection can be improved.
@@ -131,7 +131,7 @@ function IsJavaMinimumVersion(Version: pwidechar; VersionOK: PDWORD): DWORD;
 
 `Version`
 
-A Unicode string containing a version number. The string can contain from 1 to 4 decimal numbers separated by `.` characters.
+A Unicode string containing a version number. The string can contain from 1 to 4 numbers in the range 0 through 65535 separated by `.` characters.
 
 `VersionOK`
 
@@ -139,7 +139,7 @@ A pointer to a variable that gets set to 1 if the installed Java version is at l
 
 ### Return Value
 
-The `IsJavaMinimumVersion()` function returns 0 for success, or non-zero for failure. If the version specified in the `Version` parameter is not a valid version number string, this function will return error code 87 (`ERROR_INVALID_PARAMETER`).
+The `IsJavaMinimumVersion()` function returns 0 for success, or non-zero for failure. If the version specified in the `Version` parameter is not a valid version number string, the function will return error code 87 (`ERROR_INVALID_PARAMETER`).
 
 ---
 
@@ -206,6 +206,10 @@ Specifies the number of characters needed to store the version number string, no
 The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
 
 # Version History
+
+## 1.2.1.0 (2021-01-19)
+
+* Minor tweaks and minor corrections to documentation.
 
 ## 1.2.0.0 (2021-01-15)
 

@@ -211,7 +211,7 @@ function ExpandVersionString(const Version: unicodestring): unicodestring;
       begin
       Part := StrToIntDef(InParts[I], -1);
       if (Part < 0) or (Part > MAXWORD) then exit();
-      OutParts[PartCount] := word(StrToIntDef(InParts[I], -1));
+      OutParts[PartCount] := word(Part);
       Inc(PartCount);
       end;
     end;

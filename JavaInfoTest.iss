@@ -25,7 +25,7 @@
 
 [Setup]
 AppName=JavaInfoTest
-AppVersion=1.2.0.0
+AppVersion=1.2.1.0
 UsePreviousAppDir=false
 DefaultDirName={autopf}\JavaInfoTest
 Uninstallable=false
