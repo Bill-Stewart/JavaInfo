@@ -19,50 +19,52 @@
 {$H+}
 {$APPTYPE GUI}
 
-program
-  JavaInfoTest;
+program JavaInfoTest;
 
 uses
-  windows;
+  Windows;
 
 type
   TGetDWORD = function(): DWORD; stdcall;
-  TGetString = function(Buffer: pwidechar; NumChars: DWORD): DWORD; stdcall;
-  TIsBinary64Bit = function(FileName: pwidechar; Is64Bit: PDWORD): DWORD; stdcall;
+  TGetString = function(Buffer: PWideChar; NumChars: DWORD): DWORD; stdcall;
+  TIsBinary64Bit = function(FileName: PWideChar; Is64Bit: PDWORD): DWORD; stdcall;
 
 var
   DLLHandle: HMODULE;
   IsJavaInstalled: TGetDWORD;
   GetJavaHome, GetJavaVersion: TGetString;
   IsBinary64Bit: TIsBinary64Bit;
-  JavaHome, JavaBinary, JavaVersion, BinaryType, Msg: unicodestring;
+  JavaHome, JavaBinary, JavaVersion, BinaryType, Msg: UnicodeString;
   Is64Bit: DWORD;
 
-procedure MsgBox(const Msg: unicodestring; const MsgBoxType: UINT);
-  begin
-  MessageBoxW(0, pwidechar(Msg), 'JavaInfo.dll Test', MsgBoxType or MB_OK);
-  end;
+procedure MsgBox(const Msg: UnicodeString; const MsgBoxType: UINT);
+begin
+  MessageBoxW(0, PWideChar(Msg), 'JavaInfo.dll Test', MsgBoxType or MB_OK);
+end;
 
-function GetString(var Func: TGetString): unicodestring;
-  var
-    NumChars: DWORD;
-    OutStr: unicodestring;
-  begin
+function GetString(var Func: TGetString): UnicodeString;
+var
+  NumChars: DWORD;
+  OutStr: UnicodeString;
+begin
   result := '';
   NumChars := Func(nil, 0);
   SetLength(OutStr, NumChars);
-  if Func(pwidechar(OutStr), NumChars) > 0 then
+  if Func(PWideChar(OutStr), NumChars) > 0 then
     result := OutStr;
-  end;
+end;
 
 begin
   DLLHandle := LoadLibrary('JavaInfo.dll');
-  if DLLHandle = 0 then ExitCode := GetLastError() else ExitCode := 0;
+  if DLLHandle = 0 then
+    ExitCode := GetLastError()
+  else
+    ExitCode := 0;
   if ExitCode <> 0 then
-    begin
+  begin
     MsgBox('Unable to load JavaInfo.dll.', MB_ICONERROR);
     exit();
-    end;
+  end;
   GetJavaHome := TGetString(GetProcAddress(DLLHandle, 'GetJavaHome'));
   GetJavaVersion := TGetString(GetProcAddress(DLLHandle, 'GetJavaVersion'));
   IsBinary64Bit := TIsBinary64Bit(GetProcAddress(DLLHandle, 'IsBinary64Bit'));
@@ -70,20 +72,22 @@ begin
   if IsJavaInstalled() = 0 then
     MsgBox('JavaInfo.dll did not detect a Java installation.', 0)
   else
-    begin
+  begin
     JavaHome := GetString(GetJavaHome);
     JavaBinary := JavaHome + '\bin\java.exe';
-    if IsBinary64Bit(pwidechar(JavaBinary), @Is64Bit) = 0 then
-      begin
-      if Is64Bit = 1 then BinaryType := '64-bit' else BinaryType := '32-bit';
-      end
+    if IsBinary64Bit(PWideChar(JavaBinary), @Is64Bit) = 0 then
+    begin
+      if Is64Bit = 1 then
+        BinaryType := '64-bit'
+      else
+        BinaryType := '32-bit';
+    end
     else
       BinaryType := 'unknown';
     JavaVersion := GetString(GetJavaVersion);
-    Msg := 'Java home: ' + JavaHome + #10
-         + 'Java file version: ' + JavaVersion + #10
-         + 'Platform: ' + BinaryType;
+    Msg := 'Java home: ' + JavaHome + #10 + 'Java file version: ' + JavaVersion + #10 +
+      'Platform: ' + BinaryType;
     MsgBox(Msg, 0);
-    end;
+  end;
   FreeLibrary(DLLHandle);
 end.

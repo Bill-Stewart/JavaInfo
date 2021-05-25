@@ -18,31 +18,30 @@
 {$MODE OBJFPC}
 {$H+}
 
-unit
-  wsJavaInfo;
+unit wsJavaInfo;
 
 interface
 
 type
-  TJavaDetectionType = (JDNone,JDEnvironment,JDPath,JDJavaSoft,JDIBM,JDAdoptOpenJDK,JDZulu);
+  TJavaDetectionType = (JDNone, JDEnvironment, JDPath, JDJavaSoft, JDIBM, JDAdoptOpenJDK, JDZulu);
 
 // Gets whether specified binary is 64-bit or not in Is64Bit parameter; returns
 // 0 for success, or non-zero for failure
-function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
+function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
 
 // If Java installation found, returns path of Java home directory
-function wsGetJavaHome(): unicodestring;
+function wsGetJavaHome(): UnicodeString;
 
 // If Java installation found, returns version number of java.exe as a string
 // (a.b.c.d)
-function wsGetJavaVersion(): unicodestring;
+function wsGetJavaVersion(): UnicodeString;
 
 // Returns true if a Java installation was found, or false otherwise
-function wsIsJavaInstalled(): boolean;
+function wsIsJavaInstalled(): Boolean;
 
 // Gets whether the installed Java version is at least the specified version
 // in the VersionOK parameter; returns true for success, or false otherwise
-function wsIsJavaMinimumVersion(Version: unicodestring; var VersionOK: boolean): boolean;
+function wsIsJavaMinimumVersion(Version: UnicodeString; var VersionOK: Boolean): Boolean;
 
 // Diagnostic: returns Java detection type
 function wsGetJavaDetectionType(): TJavaDetectionType;
@@ -50,7 +49,7 @@ function wsGetJavaDetectionType(): TJavaDetectionType;
 implementation
 
 uses
-  windows,
+  Windows,
   wsUtilArch,
   wsUtilEnv,
   wsUtilFile,
@@ -58,42 +57,44 @@ uses
   wsUtilStr;
 
 var
-  JavaHome, JavaVersion: unicodestring;
+  JavaHome, JavaVersion: UnicodeString;
   JavaDetectionType: TJavaDetectionType;
 
-function wsIsBinary64Bit(FileName: unicodestring; var Is64Bit: boolean): DWORD;
-  var
-    BinaryType: word;
-  begin
+function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
+var
+  BinaryType: Word;
+begin
   result := GetBinaryType(FileName, BinaryType);
-  if result = 0 then Is64Bit := BinaryType <> IMAGE_FILE_MACHINE_I386;
-  end;
+  if result = 0 then
+    Is64Bit := BinaryType <> IMAGE_FILE_MACHINE_I386;
+end;
 
 // Find Java home from environment variables
-function FindJavaHomeEnvironment(): unicodestring;
-  var
-    VarList: TArrayOfString;
-    I: longint;
-  begin
+function FindJavaHomeEnvironment(): UnicodeString;
+var
+  VarList: TArrayOfString;
+  I: LongInt;
+begin
   result := '';
   SetLength(VarList, 3);
   VarList[0] := 'JAVA_HOME';
   VarList[1] := 'JDK_HOME';
   VarList[2] := 'JRE_HOME';
   for I := 0 to Length(VarList) - 1 do
-    begin
+  begin
     result := GetEnvVar(VarList[I]);
-    if result <> '' then break;
-    end;
+    if result <> '' then
+      break;
   end;
+end;
 
 // Find Java home by searching the Path
-function FindJavaHomePath(): unicodestring;
-  begin
+function FindJavaHomePath(): UnicodeString;
+begin
   result := FileSearch('java.exe', GetEnvVar('Path'));
   if result <> '' then
     result := ExtractFileDir(ExtractFileDir(result));
-  end;
+end;
 
 // Find latest Java home using JavaSoft-style registry subkeys
 // Subkey: SOFTWARE\<vendor>\<javatype>\<version>
@@ -111,14 +112,14 @@ function FindJavaHomePath(): unicodestring;
 // If starting subkey is 'SOFTWARE\IBM', this function should detect IBM JDK
 // (hopefully? I have no way to test, as I don't have a way to get an IBM
 // JRE/JDK on Windows)
-function FindJavaHomeRegistryJavaSoft(const StartingSubKey: unicodestring): unicodestring;
-  var
-    LatestSubKeyName, LatestVersion, ResultStr: unicodestring;
-    RootKey: HKEY;
-    I, J: longint;
-    StartingSubKeys, SubKeyNames: TArrayOfString;
-    SubKeyExists: boolean;
-  begin
+function FindJavaHomeRegistryJavaSoft(const StartingSubKey: UnicodeString): UnicodeString;
+var
+  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  RootKey: HKEY;
+  I, J: LongInt;
+  StartingSubKeys, SubKeyNames: TArrayOfString;
+  SubKeyExists: Boolean;
+begin
   result := '';
   LatestSubKeyName := '';
   LatestVersion := '0';
@@ -129,42 +130,45 @@ function FindJavaHomeRegistryJavaSoft(const StartingSubKey: unicodestring): unic
   StartingSubKeys[2] := JoinPath(StartingSubKey, 'Java Runtime Environment');
   StartingSubKeys[3] := JoinPath(StartingSubKey, 'JRE');
   for I := 0 to Length(StartingSubKeys) - 1 do
-    begin
+  begin
     SubKeyExists := false;
     if IsWin64() then
-      begin
+    begin
       SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, StartingSubKeys[I]);
       if SubKeyExists then
         RootKey := HKEY_LOCAL_MACHINE_64
       else
-        begin
+      begin
         SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, StartingSubKeys[I]);
-        if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE_32;
-        end;
-      end
-    else
-      begin
-      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, StartingSubKeys[I]);
-      if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE;
+        if SubKeyExists then
+          RootKey := HKEY_LOCAL_MACHINE_32;
       end;
+    end
+    else
+    begin
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, StartingSubKeys[I]);
+      if SubKeyExists then
+        RootKey := HKEY_LOCAL_MACHINE;
+    end;
     if SubKeyExists then
-      begin
+    begin
       if RegGetSubKeyNames(RootKey, StartingSubKeys[I], SubKeyNames) and (Length(SubKeyNames) > 0) then
-        begin
+      begin
         for J := 0 to Length(SubKeyNames) - 1 do
-          begin
+        begin
           if CompareVersionStrings(SubKeyNames[J], LatestVersion) > 0 then
-            begin
+          begin
             LatestSubKeyName := StartingSubKeys[I];
             LatestVersion := SubKeyNames[J];
-            end;
           end;
         end;
       end;
     end;
-  if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName + '\' + LatestVersion, 'JavaHome', ResultStr)) and (ResultStr <> '') then
-    result := ResultStr;
   end;
+  if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName + '\' + LatestVersion,
+    'JavaHome', ResultStr)) and (ResultStr <> '') then
+    result := ResultStr;
+end;
 
 // Find latest Java home using AdoptOpenJDK-style registry subkeys
 // Subkey: SOFTWARE\AdoptOpenJDK\<javatype>\<version>\<buildtype>\MSI
@@ -173,14 +177,14 @@ function FindJavaHomeRegistryJavaSoft(const StartingSubKey: unicodestring): unic
 //   <javatype> is JDK or JRE
 //   <version> is the Java version string
 //   <buildtype> is usually 'hotspot' or 'openj9'
-function FindJavaHomeRegistryAdoptOpenJDK(): unicodestring;
-  var
-    LatestSubKeyName, LatestVersion, ResultStr: unicodestring;
-    RootKey: HKEY;
-    I, J, K: longint;
-    StartingSubKeys, SubKeyNames, SubSubKeyNames: TArrayOfString;
-    SubKeyExists: boolean;
-  begin
+function FindJavaHomeRegistryAdoptOpenJDK(): UnicodeString;
+var
+  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  RootKey: HKEY;
+  I, J, K: LongInt;
+  StartingSubKeys, SubKeyNames, SubSubKeyNames: TArrayOfString;
+  SubKeyExists: Boolean;
+begin
   result := '';
   LatestSubKeyName := '';
   LatestVersion := '0';
@@ -189,48 +193,51 @@ function FindJavaHomeRegistryAdoptOpenJDK(): unicodestring;
   StartingSubKeys[0] := 'SOFTWARE\AdoptOpenJDK\JDK';
   StartingSubKeys[1] := 'SOFTWARE\AdoptOpenJDK\JRE';
   for I := 0 to Length(StartingSubKeys) - 1 do
-    begin
+  begin
     SubKeyExists := false;
     if IsWin64() then
-      begin
+    begin
       SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, StartingSubKeys[I]);
       if SubKeyExists then
         RootKey := HKEY_LOCAL_MACHINE_64
       else
-        begin
+      begin
         SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, StartingSubKeys[I]);
-        if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE_32;
-        end;
-      end
-    else
-      begin
-      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, StartingSubKeys[I]);
-      if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE;
+        if SubKeyExists then
+          RootKey := HKEY_LOCAL_MACHINE_32;
       end;
+    end
+    else
+    begin
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, StartingSubKeys[I]);
+      if SubKeyExists then
+        RootKey := HKEY_LOCAL_MACHINE;
+    end;
     if SubKeyExists then
-      begin
+    begin
       if RegGetSubKeyNames(RootKey, StartingSubKeys[I], SubKeyNames) and (Length(SubKeyNames) > 0) then
-        begin
+      begin
         for J := 0 to Length(SubKeyNames) - 1 do
-          begin
+        begin
           if CompareVersionStrings(SubKeyNames[J], LatestVersion) > 0 then
+          begin
+            if RegGetSubKeyNames(RootKey, StartingSubKeys[I] + '\' + SubKeyNames[J], SubSubKeyNames) and
+              (Length(SubSubKeyNames) > 0) then
             begin
-            if RegGetSubKeyNames(RootKey, StartingSubKeys[I] + '\' + SubKeyNames[J], SubSubKeyNames) and (Length(SubSubKeyNames) > 0) then
-              begin
               for K := 0 to Length(SubSubKeyNames) - 1 do
-                begin
+              begin
                 LatestSubKeyName := StartingSubKeys[I] + '\' + SubKeyNames[J] + '\' + SubSubKeyNames[K] + '\MSI';
                 LatestVersion := SubKeyNames[J];
-                end;
               end;
             end;
           end;
         end;
       end;
     end;
+  end;
   if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName, 'Path', ResultStr)) and (ResultStr <> '') then
     result := ResultStr;
-  end;
+end;
 
 // Find latest Java home using Zulu-style registry subkeys
 // Subkey: SOFTWARE\Azul Systems\Zulu\zulu-<version>
@@ -238,14 +245,14 @@ function FindJavaHomeRegistryAdoptOpenJDK(): unicodestring;
 // <version> is the Java version
 // (This search would only occur if the Zulu installer doesn't update the
 // JavaSoft registry subkeys for some reason)
-function FindJavaHomeRegistryZulu(): unicodestring;
-  var
-    LatestSubKeyName, LatestVersion, SubKeyName, CurrentVersion, ResultStr: unicodestring;
-    RootKey: HKEY;
-    SubKeyExists: boolean;
-    SubKeyNames: TArrayOfString;
-    I: longint;
-  begin
+function FindJavaHomeRegistryZulu(): UnicodeString;
+var
+  LatestSubKeyName, LatestVersion, SubKeyName, CurrentVersion, ResultStr: UnicodeString;
+  RootKey: HKEY;
+  SubKeyExists: Boolean;
+  SubKeyNames: TArrayOfString;
+  I: LongInt;
+begin
   result := '';
   LatestSubKeyName := '';
   LatestVersion := '0';
@@ -253,64 +260,67 @@ function FindJavaHomeRegistryZulu(): unicodestring;
   SubKeyExists := false;
   SubKeyName := 'SOFTWARE\Azul Systems\Zulu';
   if IsWin64() then
-    begin
+  begin
     SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, SubKeyName);
     if SubKeyExists then
       RootKey := HKEY_LOCAL_MACHINE_64
     else
-      begin
+    begin
       SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, SubKeyName);
-      if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE_32;
-      end;
-    end
-  else
-    begin
-    SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, SubKeyName);
-    if SubKeyExists then RootKey := HKEY_LOCAL_MACHINE;
+      if SubKeyExists then
+        RootKey := HKEY_LOCAL_MACHINE_32;
     end;
+  end
+  else
+  begin
+    SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, SubKeyName);
+    if SubKeyExists then
+      RootKey := HKEY_LOCAL_MACHINE;
+  end;
   if SubKeyExists then
-    begin
+  begin
     if RegGetSubKeyNames(RootKey, SubKeyName, SubKeyNames) and (Length(SubKeyNames) > 0) then
-      begin
+    begin
       for I := 0 to Length(SubKeyNames) - 1 do
-        begin
+      begin
         if (Length(SubKeyNames[I]) > 5) and (LowerCase(Copy(SubKeyNames[I], 1, 5)) = 'zulu-') then
-          begin
+        begin
           if GetDigitsInString(SubKeyNames[I], CurrentVersion) then
-            begin
+          begin
             if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
-              begin
+            begin
               LatestSubKeyName := SubKeyName + '\' + SubKeyNames[I];
               LatestVersion := CurrentVersion;
-              end;
             end;
           end;
         end;
       end;
     end;
-  if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName, 'InstallationPath', ResultStr)) and (ResultStr <> '') then
-    result := ResultStr;
   end;
+  if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName, 'InstallationPath', ResultStr)) and
+    (ResultStr <> '') then
+    result := ResultStr;
+end;
 
-function GetJavaVersion(const Home: unicodestring): unicodestring;
-  var
-    Binary: unicodestring;
-  begin
+function GetJavaVersion(const Home: UnicodeString): UnicodeString;
+var
+  Binary: UnicodeString;
+begin
   result := '';
   if (Home <> '') and DirExists(Home) then
-    begin
+  begin
     Binary := JoinPath(Home, '\bin\java.exe');
     if FileExists(Binary) then
       result := GetFileVersion(Binary);
-    end;
   end;
+end;
 
-procedure GetJavaDetail(var JavaHome, JavaVersion: unicodestring;
-                        var JavaDetectionType: TJavaDetectionType);
-  var
-    CurrentHome, CurrentVersion, LatestVersion, LatestHome: unicodestring;
-    LatestDetectionType: TJavaDetectionType;
-  begin
+procedure GetJavaDetail(var JavaHome, JavaVersion: UnicodeString;
+  var JavaDetectionType: TJavaDetectionType);
+var
+  CurrentHome, CurrentVersion, LatestVersion, LatestHome: UnicodeString;
+  LatestDetectionType: TJavaDetectionType;
+begin
   // Initialize
   JavaHome := '';
   JavaVersion := '';
@@ -319,22 +329,22 @@ procedure GetJavaDetail(var JavaHome, JavaVersion: unicodestring;
   CurrentHome := FindJavaHomeEnvironment();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     JavaHome := CurrentHome;
     JavaVersion := CurrentVersion;
     JavaDetectionType := JDEnvironment;
     exit();
-    end;
+  end;
   // Path search: Exit if found
   CurrentHome := FindJavaHomePath();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     JavaHome := CurrentHome;
     JavaVersion := CurrentVersion;
     JavaDetectionType := JDPath;
     exit();
-    end;
+  end;
   // Registry search should return latest version from all searches
   LatestHome := '';
   LatestVersion := '0';
@@ -343,85 +353,85 @@ procedure GetJavaDetail(var JavaHome, JavaVersion: unicodestring;
   CurrentHome := FindJavaHomeRegistryJavaSoft('SOFTWARE\JavaSoft');
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
-      begin
+    begin
       LatestHome := CurrentHome;
       LatestVersion := CurrentVersion;
       LatestDetectionType := JDJavaSoft;
-      end;
     end;
+  end;
   // Search 'HKLM\SOFTWARE\IBM'
   CurrentHome := FindJavaHomeRegistryJavaSoft('SOFTWARE\IBM');
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
-      begin
+    begin
       LatestHome := CurrentHome;
       LatestVersion := CurrentVersion;
       LatestDetectionType := JDIBM;
-      end;
     end;
+  end;
   // Search 'HKLM\SOFTWARE\AdoptOpenJDK'
   CurrentHome := FindJavaHomeRegistryAdoptOpenJDK();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
-      begin
+    begin
       LatestHome := CurrentHome;
       LatestVersion := CurrentVersion;
       LatestDetectionType := JDAdoptOpenJDK;
-      end;
     end;
+  end;
   // Search 'HKLM\SOFTWARE\Azul Systems\Zulu'
   CurrentHome := FindJavaHomeRegistryZulu();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
-    begin
+  begin
     if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
-      begin
+    begin
       LatestHome := CurrentHome;
       LatestVersion := CurrentVersion;
       LatestDetectionType := JDZulu;
-      end;
     end;
+  end;
   if (LatestHome <> '') and (LatestVersion <> '0') then
-    begin
+  begin
     JavaHome := LatestHome;
     JavaVersion := LatestVersion;
     JavaDetectionType := LatestDetectionType;
-    end;
   end;
+end;
 
-function wsGetJavaHome(): unicodestring;
-  begin
+function wsGetJavaHome(): UnicodeString;
+begin
   result := RemoveBackslashUnlessRoot(JavaHome);
-  end;
+end;
 
-function wsGetJavaVersion(): unicodestring;
-  begin
+function wsGetJavaVersion(): UnicodeString;
+begin
   result := JavaVersion;
-  end;
+end;
 
-function wsIsJavaInstalled(): boolean;
-  begin
+function wsIsJavaInstalled(): Boolean;
+begin
   result := (JavaHome <> '') and (JavaVersion <> '');
-  end;
+end;
 
-function wsIsJavaMinimumVersion(Version: unicodestring; var VersionOK: boolean): boolean;
-  begin
+function wsIsJavaMinimumVersion(Version: UnicodeString; var VersionOK: Boolean): Boolean;
+begin
   Version := ExpandVersionString(Version);
   result := Version <> '';
   if result then
     VersionOK := CompareVersionStrings(JavaVersion, Version) >= 0;
-  end;
+end;
 
 function wsGetJavaDetectionType(): TJavaDetectionType;
-  begin
+begin
   result := JavaDetectionType;
-  end;
+end;
 
 initialization
   GetJavaDetail(JavaHome, JavaVersion, JavaDetectionType);

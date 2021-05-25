@@ -19,43 +19,42 @@
 {$MODE OBJFPC}
 {$H+}
 
-unit
-  wsUtilFile;
+unit wsUtilFile;
 
 interface
 
 // Returns true if the named directorty exists, or false if not
-function DirExists(const DirName: unicodestring): boolean;
+function DirExists(const DirName: UnicodeString): Boolean;
 
 // Returns directory name from a path without trailing separator
-function ExtractFileDir(const FileName: unicodestring): unicodestring;
+function ExtractFileDir(const FileName: UnicodeString): UnicodeString;
 
 // Returns true if the named file exists, or false if not
-function FileExists(const FileName: unicodestring): boolean;
+function FileExists(const FileName: UnicodeString): Boolean;
 
 // Searches for a named file in semicolon-delimited list of directory names;
 // returns an empty string if nothing found
-function FileSearch(const Name, DirList: unicodestring): unicodestring;
+function FileSearch(const Name, DirList: UnicodeString): UnicodeString;
 
 // Gets the specified file's binary type to the BinaryType parameter; returns
 // 0 for success, or non-zero for failure
-function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
+function GetBinaryType(const FileName: UnicodeString; var BinaryType: Word): DWORD;
 
 // Gets the path for the current running executable
-function GetExecutablePath(): unicodestring;
+function GetExecutablePath(): UnicodeString;
 
 // Returns a version number string (a.b.c.d) for the named file; returns an
 // empty string if the function failed (e.g., no version information found)
-function GetFileVersion(const FileName: unicodestring): unicodestring;
+function GetFileVersion(const FileName: UnicodeString): UnicodeString;
 
 // Concatenates Path1 to Path2 with only a single path separator between
-function JoinPath(Path1, Path2: unicodestring): unicodestring;
+function JoinPath(Path1, Path2: UnicodeString): UnicodeString;
 
 implementation
 
 uses
   imagehlp,
-  windows,
+  Windows,
   wsUtilArch,
   wsUtilStr;
 
@@ -63,179 +62,179 @@ const
   INVALID_FILE_ATTRIBUTES = DWORD(-1);
 
 var
-  PerformWow64FsRedirection: boolean;
-  Wow64FsRedirectionOldValue: pointer;
+  PerformWow64FsRedirection: Boolean;
+  Wow64FsRedirectionOldValue: Pointer;
 
 procedure ToggleWow64FsRedirection();
-  begin
+begin
   if PerformWow64FsRedirection then
-    begin
+  begin
     if not Assigned(Wow64FsRedirectionOldValue) then
-      begin
+    begin
       if not Wow64DisableWow64FsRedirection(@Wow64FsRedirectionOldValue) then
         Wow64FsRedirectionOldValue := nil;
-      end
+    end
     else
-      begin
-      if Assigned(Wow64FsRedirectionOldValue) then
-        begin
-        if Wow64RevertWow64FsRedirection(Wow64FsRedirectionOldValue) then
-          Wow64FsRedirectionOldValue := nil;
-        end;
-      end;
+    begin
+      if Wow64RevertWow64FsRedirection(Wow64FsRedirectionOldValue) then
+        Wow64FsRedirectionOldValue := nil;
     end;
   end;
+end;
 
-function DirExists(const DirName: unicodestring): boolean;
-  var
-    Attrs: DWORD;
-  begin
+function DirExists(const DirName: UnicodeString): Boolean;
+var
+  Attrs: DWORD;
+begin
   ToggleWow64FsRedirection();
-  Attrs := GetFileAttributesW(pwidechar(DirName));
+  Attrs := GetFileAttributesW(PWideChar(DirName));
   ToggleWow64FsRedirection();
   result := (Attrs <> INVALID_FILE_ATTRIBUTES) and
     ((Attrs and FILE_ATTRIBUTE_DIRECTORY) <> 0);
-  end;
+end;
 
-function ExtractFileDir(const FileName: unicodestring): unicodestring;
-  const
-    Separators: set of char = [':','\'];
-  var
-    I: longint;
-  begin
+function ExtractFileDir(const FileName: UnicodeString): UnicodeString;
+const
+  Separators: set of Char = [':', '\'];
+var
+  I: LongInt;
+begin
   I := Length(FileName);
   while (I > 0) and (not (FileName[I] in Separators)) do
     Dec(I);
   if (I > 1) and (FileName[I] = '\') and (not (FileName[I - 1] in Separators)) then
     Dec(I);
   result := Copy(FileName, 1, I);
-  end;
+end;
 
-function FileExists(const FileName: unicodestring): boolean;
-  var
-    Attrs: DWORD;
-  begin
+function FileExists(const FileName: UnicodeString): Boolean;
+var
+  Attrs: DWORD;
+begin
   ToggleWow64FsRedirection();
-  Attrs := GetFileAttributesW(pwidechar(FileName));
+  Attrs := GetFileAttributesW(PWideChar(FileName));
   ToggleWow64FsRedirection();
   result := (Attrs <> INVALID_FILE_ATTRIBUTES) and
     ((Attrs and FILE_ATTRIBUTE_DIRECTORY) = 0);
-  end;
+end;
 
-function FileSearch(const Name, DirList: unicodestring): unicodestring;
-  var
-    NumChars, BufSize: DWORD;
-    pBuffer: pwidechar;
-  begin
+function FileSearch(const Name, DirList: UnicodeString): UnicodeString;
+var
+  NumChars, BufSize: DWORD;
+  pBuffer: PWideChar;
+begin
   result := '';
   // Get number of characters needed for buffer
   ToggleWow64FsRedirection();
-  NumChars := SearchPathW(pwidechar(DirList),  // LPCSTR lpPath
-                          pwideChar(Name),     // LPCSTR lpFilename
-                          nil,                 // LPCSTR lpExtension
-                          0,                   // DWORD  nBufferLength
-                          nil,                 // LPSTR  lpBuffer
-                          nil);                // LPSTR  lpFilePart
+  NumChars := SearchPathW(PWideChar(DirList),  // LPCSTR lpPath
+    PWideChar(Name),                           // LPCSTR lpFilename
+    nil,                                       // LPCSTR lpExtension
+    0,                                         // DWORD  nBufferLength
+    nil,                                       // LPSTR  lpBuffer
+    nil);                                      // LPSTR  lpFilePart
   if NumChars > 0 then
-    begin
-    BufSize := NumChars * SizeOf(widechar);
+  begin
+    BufSize := NumChars * SizeOf(WideChar);
     GetMem(pBuffer, BufSize);
-    if SearchPathW(pwidechar(DirList),  // LPCSTR lpPath
-                   pwideChar(Name),     // LPCSTR lpFilename
-                   nil,                 // LPCSTR lpExtension
-                   NumChars,            // DWORD  nBufferLength
-                   pBuffer,             // LPSTR  lpBuffer
-                   nil) > 0 then        // LPSTR  lpFilePart
+    if SearchPathW(PWideChar(DirList),  // LPCSTR lpPath
+      PWideChar(Name),                  // LPCSTR lpFilename
+      nil,                              // LPCSTR lpExtension
+      NumChars,                         // DWORD  nBufferLength
+      pBuffer,                          // LPSTR  lpBuffer
+      nil) > 0 then                     // LPSTR  lpFilePart
       result := pBuffer;
     FreeMem(pBuffer, BufSize);
-    end;
-  ToggleWow64FsRedirection();
   end;
+  ToggleWow64FsRedirection();
+end;
 
-function GetBinaryType(const FileName: unicodestring; var BinaryType: word): DWORD;
-  var
-    pLoadedImage: PLOADED_IMAGE;
-  begin
+function GetBinaryType(const FileName: UnicodeString; var BinaryType: Word): DWORD;
+var
+  pLoadedImage: PLOADED_IMAGE;
+begin
   ToggleWow64FsRedirection();
-  pLoadedImage := ImageLoad(pchar(UnicodeStringToString(FileName)), '');
+  pLoadedImage := ImageLoad(PChar(UnicodeStringToString(FileName)), '');
   ToggleWow64FsRedirection();
-  if Assigned(pLoadedImage) then result := 0 else result := GetLastError();
+  if Assigned(pLoadedImage) then
+    result := 0
+  else
+    result := GetLastError();
   if result = 0 then
-    begin
+  begin
     BinaryType := pLoadedImage^.Fileheader^.FileHeader.Machine;
     ImageUnload(pLoadedImage);
-    end;
   end;
+end;
 
-function GetExecutablePath(): unicodestring;
-  var
-    NumChars, BufSize: DWORD;
-    pBuffer: pwidechar;
-  begin
+function GetExecutablePath(): UnicodeString;
+var
+  NumChars, BufSize: DWORD;
+  pBuffer: PWideChar;
+begin
   result := '';
   // GetModuleFileNameW() doesn't let us determine the needed length of the
   // string by setting third parameter to zero, so just create a 64K buffer
   NumChars := 32768;
-  BufSize := NumChars * SizeOf(widechar);
+  BufSize := NumChars * SizeOf(WideChar);
   GetMem(pBuffer, BufSize);
-  NumChars := GetModuleFileNameW(0,          // HMODULE hModule
-                                 pBuffer,    // LPWSTR  lpFilename
-                                 NumChars);  // DWORD   nSize
+  NumChars := GetModuleFileNameW(0,  // HMODULE hModule
+    pBuffer,                         // LPWSTR  lpFilename
+    NumChars);                       // DWORD   nSize
   if (NumChars > 0) and (GetLastError() = ERROR_SUCCESS) then
     result := pBuffer;
   FreeMem(pBuffer, BufSize);
-  end;
+end;
 
-function GetFileVersion(const FileName: unicodestring): unicodestring;
-  var
-    VerInfoSize, Handle: DWORD;
-    pBuffer: pointer;
-    pFileInfo: ^VS_FIXEDFILEINFO;
-    Len: UINT;
-  begin
+function GetFileVersion(const FileName: UnicodeString): UnicodeString;
+var
+  VerInfoSize, Handle: DWORD;
+  pBuffer: Pointer;
+  pFileInfo: ^VS_FIXEDFILEINFO;
+  Len: UINT;
+begin
   result := '';
   ToggleWow64FsRedirection();
-  VerInfoSize := GetFileVersionInfoSizeW(pwidechar(FileName), Handle);
+  VerInfoSize := GetFileVersionInfoSizeW(PWideChar(FileName), Handle);
   if VerInfoSize > 0 then
-    begin
+  begin
     GetMem(pBuffer, VerInfoSize);
-    if GetFileVersionInfoW(pwidechar(FileName), Handle, VerInfoSize, pBuffer) then
-      begin
+    if GetFileVersionInfoW(PWideChar(FileName), Handle, VerInfoSize, pBuffer) then
+    begin
       if VerQueryValueW(pBuffer, '\', pFileInfo, Len) then
-        begin
+      begin
         with pFileInfo^ do
-          begin
+        begin
           result := IntToStr(HiWord(dwFileVersionMS)) + '.' +
             IntToStr(LoWord(dwFileVersionMS)) + '.' +
             IntToStr(HiWord(dwFileVersionLS)) + '.' +
             IntToStr(LoWord(dwFileVersionLS));
-          end;
         end;
       end;
-    FreeMem(pBuffer, VerInfoSize);
     end;
-  ToggleWow64FsRedirection();
+    FreeMem(pBuffer, VerInfoSize);
   end;
+  ToggleWow64FsRedirection();
+end;
 
-function JoinPath(Path1, Path2: unicodestring): unicodestring;
-  begin
+function JoinPath(Path1, Path2: UnicodeString): UnicodeString;
+begin
   if (Length(Path1) > 0) and (Length(Path2) > 0) then
-    begin
+  begin
     while Path1[Length(Path1)] = '\' do
       Path1 := Copy(Path1, 1, Length(Path1) - 1);
     while Path2[1] = '\' do
       Path2 := Copy(Path2, 2, Length(Path2) - 1);
     result := Path1 + '\' + Path2;
-    end
+  end
   else
     result := '';
-  end;
+end;
 
 procedure InitializeUnit();
-  begin
+begin
   PerformWow64FsRedirection := IsProcessWoW64();
   Wow64FsRedirectionOldValue := nil;
-  end;
+end;
 
 initialization
   InitializeUnit();
