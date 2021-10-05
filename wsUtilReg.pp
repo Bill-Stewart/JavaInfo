@@ -103,7 +103,7 @@ begin
     if NumSubKeys > 0 then
     begin
       // lpcbMaxValueNameLen doesn't include terminating null
-      MaxSubKeyNameLen := MaxSubKeyNameLen * SizeOf(WideChar) + SizeOf(WideChar);
+      MaxSubKeyNameLen := (MaxSubKeyNameLen * SizeOf(WideChar)) + SizeOf(WideChar);
       // Each call to RegEnumKeyEx will use this buffer
       GetMem(Name, MaxSubKeyNameLen);
       // Enumerate subkey names

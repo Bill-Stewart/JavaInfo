@@ -1,5 +1,11 @@
 # JavaInfo.dll Version History
 
+## 1.3.0.0 (2021-10-05)
+
+* Added adoptium.net 'Eclipse Foundation' and 'Semeru' registry detection (adoptium.net is replacing adoptopenjdk.net).
+
+* Minor tweaks.
+
 ## 1.2.2.0 (2021-05-25)
 
 * Updated string-reading registry code to account for strings that might be missing a null terminator (to prevent a potential, but very low probability, buffer overflow).

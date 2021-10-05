@@ -83,7 +83,7 @@ function Get-DLLString {
   if ( $numChars -gt 0 ) {
     # Specify size of string and call function again
     $stringBuilder.Capacity = $numChars
-    if ( $DLLfunction.Invoke($stringBuilder,$numChars) -gt 0 ) {
+    if ( $dllFunction.Invoke($stringBuilder,$numChars) -gt 0 ) {
       $result = $stringBuilder.ToString()
     }
   }

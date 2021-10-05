@@ -171,9 +171,10 @@ begin
 end;
 
 // Find latest Java home using AdoptOpenJDK-style registry subkeys
-// Subkey: SOFTWARE\AdoptOpenJDK\<javatype>\<version>\<buildtype>\MSI
+// Subkey: SOFTWARE\<vendor>\<javatype>\<version>\<buildtype>\MSI
 // String value: Path
 // Where
+//   <vendor> is one of: 'AdoptOpenJDK', 'Semeru', or 'Eclipse Foundation'
 //   <javatype> is JDK or JRE
 //   <version> is the Java version string
 //   <buildtype> is usually 'hotspot' or 'openj9'
@@ -189,9 +190,13 @@ begin
   LatestSubKeyName := '';
   LatestVersion := '0';
   RootKey := 0;
-  SetLength(StartingSubKeys, 2);
+  SetLength(StartingSubKeys, 6);
   StartingSubKeys[0] := 'SOFTWARE\AdoptOpenJDK\JDK';
   StartingSubKeys[1] := 'SOFTWARE\AdoptOpenJDK\JRE';
+  StartingSubKeys[2] := 'SOFTWARE\Eclipse Foundation\JDK';
+  StartingSubKeys[3] := 'SOFTWARE\Eclipse Foundation\JRE';
+  StartingSubKeys[4] := 'SOFTWARE\Semeru\JDK';
+  StartingSubKeys[5] := 'SOFTWARE\Semeru\JRE';
   for I := 0 to Length(StartingSubKeys) - 1 do
   begin
     SubKeyExists := false;

@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION 1,2,2,0
-PRODUCTVERSION 1,2,2,0
+FILEVERSION 1,3,0,0
+PRODUCTVERSION 1,3,0,0
 FILEOS 0x4
 FILETYPE 1
 {
@@ -10,12 +10,12 @@ FILETYPE 1
     {
       VALUE "CompanyName", ""
       VALUE "FileDescription", "JavaInfo.dll"
-      VALUE "FileVersion", "1.2.2.0"
+      VALUE "FileVersion", "1.3.0.0"
       VALUE "InternalName", "JavaInfo.dll"
       VALUE "LegalCopyright", "Copyright 2020-2021 by Bill Stewart (bstewart at iname.com)"
       VALUE "OriginalFilename", "JavaInfo.dll"
       VALUE "ProductName", ""
-      VALUE "ProductVersion", "1.2.2.0"
+      VALUE "ProductVersion", "1.3.0.0"
     }
   }
 
