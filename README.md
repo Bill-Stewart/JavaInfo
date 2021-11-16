@@ -22,7 +22,7 @@ JavaInfo.dll searches for Java in the following ways:
 
 1. It checks for the presence of the `JAVA_HOME`, `JDK_HOME`, and `JRE_HOME` environment variables (in that order). The value of the environment variable is the Java home directory.
 
-2. If the environment variables noted above are not defined, JavaInfo.dll searches the directories named in the `Path` environment variable for `java.exe`. The home directory is the parent directory of the directory where `java.exe` is found. For example, if `C:\Program Files\Eclipse Foundation\JRE11\bin` is in the path (and `java.exe` is in that directory), the Java home directory is `C:\Program Files\Eclipse Foundation\JRE11`.
+2. If the environment variables noted above are not defined, JavaInfo.dll searches the directories named in the `Path` environment variable for `java.exe`. The home directory is the parent directory of the directory where `java.exe` is found. For example, if `C:\Program Files\Eclipse Adoptium\JRE11\bin` is in the path (and `java.exe` is in that directory), the Java home directory is `C:\Program Files\Eclipse Adoptium\JRE11`.
 
 3. If `java.exe` is not found in the `Path`, JavaInfo.dll searches in the registry for the home directory of the latest Java version installed. (See [Registry Searches](#registry-searches), below, for details on the registry searches.)
 
@@ -47,6 +47,7 @@ JavaInfo.dll searches in the following registry locations for the location of th
 `HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\IBM`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\AdoptOpenJDK`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\Eclipse Adoptium`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Eclipse Foundation`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Semeru`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`

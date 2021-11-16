@@ -190,13 +190,15 @@ begin
   LatestSubKeyName := '';
   LatestVersion := '0';
   RootKey := 0;
-  SetLength(StartingSubKeys, 6);
+  SetLength(StartingSubKeys, 8);
   StartingSubKeys[0] := 'SOFTWARE\AdoptOpenJDK\JDK';
   StartingSubKeys[1] := 'SOFTWARE\AdoptOpenJDK\JRE';
-  StartingSubKeys[2] := 'SOFTWARE\Eclipse Foundation\JDK';
-  StartingSubKeys[3] := 'SOFTWARE\Eclipse Foundation\JRE';
-  StartingSubKeys[4] := 'SOFTWARE\Semeru\JDK';
-  StartingSubKeys[5] := 'SOFTWARE\Semeru\JRE';
+  StartingSubKeys[2] := 'SOFTWARE\Eclipse Adoptium\JDK';
+  StartingSubKeys[3] := 'SOFTWARE\Eclipse Adoptium\JRE';
+  StartingSubKeys[4] := 'SOFTWARE\Eclipse Foundation\JDK';
+  StartingSubKeys[5] := 'SOFTWARE\Eclipse Foundation\JRE';
+  StartingSubKeys[6] := 'SOFTWARE\Semeru\JDK';
+  StartingSubKeys[7] := 'SOFTWARE\Semeru\JRE';
   for I := 0 to Length(StartingSubKeys) - 1 do
   begin
     SubKeyExists := false;

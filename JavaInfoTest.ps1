@@ -16,8 +16,8 @@
 #requires -version 2
 
 # Prerequisites:
-# * 64-bit JavaInfo.dll v1.2.0.0 or later in x64 directory
-# * 32-bit JavaInfo.dll v1.2.0.0 or later in x86 directory
+# * 64-bit JavaInfo.dll v1.2.0.0 or later in x86_64 directory
+# * 32-bit JavaInfo.dll v1.2.0.0 or later in i386 directory
 
 # If you use -MinimumVersion parameter, specify a version number string as
 # a[.b[.c[.d]]]; e.g. "-MinimumVersion 8" would test for at least Java 8
@@ -27,10 +27,10 @@ param(
 
 function Get-Platform {
   if ( [IntPtr]::Size -eq 8 ) {
-    "x64"
+    "x86_64"
   }
   else {
-    "x86"
+    "i386"
   }
 }
 

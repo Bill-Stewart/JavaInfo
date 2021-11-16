@@ -25,7 +25,7 @@
 
 [Setup]
 AppName=JavaInfoTest
-AppVersion=1.3.0.0
+AppVersion=1.3.1.0
 UsePreviousAppDir=false
 DefaultDirName={autopf}\JavaInfoTest
 Uninstallable=false
@@ -34,7 +34,7 @@ OutputBaseFilename=JavaInfoTest
 PrivilegesRequired=none
 
 [Files]
-Source: "x86\JavaInfo.dll"; Flags: dontcopy
+Source: "i386\JavaInfo.dll"; Flags: dontcopy
 
 [Messages]
 ButtonNext=&Test
