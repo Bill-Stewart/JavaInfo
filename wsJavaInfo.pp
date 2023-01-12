@@ -1,4 +1,4 @@
-{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU Lesser General Public License as published by the Free
@@ -23,7 +23,8 @@ unit wsJavaInfo;
 interface
 
 type
-  TJavaDetectionType = (JDNone, JDEnvironment, JDPath, JDJavaSoft, JDIBM, JDAdoptOpenJDK, JDZulu);
+  TJavaDetectionType = (JDNone, JDEnvironment, JDPath, JDJavaSoft, JDIBM,
+    JDAdoptium, JDMicrosoft, JDZulu);
 
 // Gets whether specified binary is 64-bit or not in Is64Bit parameter; returns
 // 0 for success, or non-zero for failure
@@ -106,7 +107,7 @@ end;
 // StartingSubKey is subkey where to start search (e.g., 'SOFTWARE\JavaSoft')
 // If starting subkey is 'SOFTWARE\JavaSoft', this function should detect:
 // * Oracle JDK/JRE
-// * AdoptOpenJDK if 'JavaSoft (Oracle) registry keys' component selected
+// * Adoptium if 'JavaSoft (Oracle) registry keys' component selected
 // * Amazon Corretto JDK if 'Setup Registry Keys' component selected
 // * Azul Systems Zulu JDK
 // If starting subkey is 'SOFTWARE\IBM', this function should detect IBM JDK
@@ -170,15 +171,15 @@ begin
     result := ResultStr;
 end;
 
-// Find latest Java home using AdoptOpenJDK-style registry subkeys
+// Find latest Java home using Adoptium-style registry subkeys
 // Subkey: SOFTWARE\<vendor>\<javatype>\<version>\<buildtype>\MSI
 // String value: Path
 // Where
-//   <vendor> is one of: 'AdoptOpenJDK', 'Semeru', or 'Eclipse Foundation'
+//   <vendor> is one of: 'AdoptOpenJDK', 'Eclipse Foundation', or 'Semeru'
 //   <javatype> is JDK or JRE
 //   <version> is the Java version string
 //   <buildtype> is usually 'hotspot' or 'openj9'
-function FindJavaHomeRegistryAdoptOpenJDK(): UnicodeString;
+function FindJavaHomeRegistryAdoptium(): UnicodeString;
 var
   LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
   RootKey: HKEY;
@@ -199,6 +200,74 @@ begin
   StartingSubKeys[5] := 'SOFTWARE\Eclipse Foundation\JRE';
   StartingSubKeys[6] := 'SOFTWARE\Semeru\JDK';
   StartingSubKeys[7] := 'SOFTWARE\Semeru\JRE';
+  for I := 0 to Length(StartingSubKeys) - 1 do
+  begin
+    SubKeyExists := false;
+    if IsWin64() then
+    begin
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_64, StartingSubKeys[I]);
+      if SubKeyExists then
+        RootKey := HKEY_LOCAL_MACHINE_64
+      else
+      begin
+        SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE_32, StartingSubKeys[I]);
+        if SubKeyExists then
+          RootKey := HKEY_LOCAL_MACHINE_32;
+      end;
+    end
+    else
+    begin
+      SubKeyExists := RegKeyExists(HKEY_LOCAL_MACHINE, StartingSubKeys[I]);
+      if SubKeyExists then
+        RootKey := HKEY_LOCAL_MACHINE;
+    end;
+    if SubKeyExists then
+    begin
+      if RegGetSubKeyNames(RootKey, StartingSubKeys[I], SubKeyNames) and (Length(SubKeyNames) > 0) then
+      begin
+        for J := 0 to Length(SubKeyNames) - 1 do
+        begin
+          if CompareVersionStrings(SubKeyNames[J], LatestVersion) > 0 then
+          begin
+            if RegGetSubKeyNames(RootKey, StartingSubKeys[I] + '\' + SubKeyNames[J], SubSubKeyNames) and
+              (Length(SubSubKeyNames) > 0) then
+            begin
+              for K := 0 to Length(SubSubKeyNames) - 1 do
+              begin
+                LatestSubKeyName := StartingSubKeys[I] + '\' + SubKeyNames[J] + '\' + SubSubKeyNames[K] + '\MSI';
+                LatestVersion := SubKeyNames[J];
+              end;
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+  if (LatestVersion <> '0') and (RegQueryStringValue(RootKey, LatestSubKeyName, 'Path', ResultStr)) and (ResultStr <> '') then
+    result := ResultStr;
+end;
+
+// Find latest Java home using Microsoft registry subkeys
+// Subkey: SOFTWARE\Microsoft\<javatype>\<version>\<buildtype>\MSI
+// String value: Path
+// Where
+//   <javatype> is JDK
+//   <version> is the Java version string
+//   <buildtype> is 'hotspot'
+function FindJavaHomeRegistryMicrosoft(): UnicodeString;
+var
+  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  RootKey: HKEY;
+  I, J, K: LongInt;
+  StartingSubKeys, SubKeyNames, SubSubKeyNames: TArrayOfString;
+  SubKeyExists: Boolean;
+begin
+  result := '';
+  LatestSubKeyName := '';
+  LatestVersion := '0';
+  RootKey := 0;
+  SetLength(StartingSubKeys, 1);
+  StartingSubKeys[0] := 'SOFTWARE\Microsoft\JDK';
   for I := 0 to Length(StartingSubKeys) - 1 do
   begin
     SubKeyExists := false;
@@ -322,8 +391,7 @@ begin
   end;
 end;
 
-procedure GetJavaDetail(var JavaHome, JavaVersion: UnicodeString;
-  var JavaDetectionType: TJavaDetectionType);
+procedure GetJavaDetail(var JavaHome, JavaVersion: UnicodeString; var JavaDetectionType: TJavaDetectionType);
 var
   CurrentHome, CurrentVersion, LatestVersion, LatestHome: UnicodeString;
   LatestDetectionType: TJavaDetectionType;
@@ -380,8 +448,8 @@ begin
       LatestDetectionType := JDIBM;
     end;
   end;
-  // Search 'HKLM\SOFTWARE\AdoptOpenJDK'
-  CurrentHome := FindJavaHomeRegistryAdoptOpenJDK();
+  // Search Eclipse Adoptium subkeys
+  CurrentHome := FindJavaHomeRegistryAdoptium();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then
   begin
@@ -389,10 +457,22 @@ begin
     begin
       LatestHome := CurrentHome;
       LatestVersion := CurrentVersion;
-      LatestDetectionType := JDAdoptOpenJDK;
+      LatestDetectionType := JDAdoptium;
     end;
   end;
-  // Search 'HKLM\SOFTWARE\Azul Systems\Zulu'
+  // Search Microsoft subkeys
+  CurrentHome := FindJavaHomeRegistryMicrosoft();
+  CurrentVersion := GetJavaVersion(CurrentHome);
+  if CurrentVersion <> '' then
+  begin
+    if CompareVersionStrings(CurrentVersion, LatestVersion) > 0 then
+    begin
+      LatestHome := CurrentHome;
+      LatestVersion := CurrentVersion;
+      LatestDetectionType := JDMicrosoft;
+    end;
+  end;
+  // Search Zulu subkeys
   CurrentHome := FindJavaHomeRegistryZulu();
   CurrentVersion := GetJavaVersion(CurrentHome);
   if CurrentVersion <> '' then

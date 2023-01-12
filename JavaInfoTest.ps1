@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+# Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -22,7 +22,8 @@
 # If you use -MinimumVersion parameter, specify a version number string as
 # a[.b[.c[.d]]]; e.g. "-MinimumVersion 8" would test for at least Java 8
 param(
-  [String] $MinimumVersion
+  [String]
+  $MinimumVersion
 )
 
 function Get-Platform {
@@ -73,7 +74,8 @@ $JavaInfo = Add-Type -Name JavaInfo `
 # DLL function wrapper to retrieve strings
 function Get-DLLString {
   param(
-    [Management.Automation.PSMethod] $dllFunction
+    [Management.Automation.PSMethod]
+    $dllFunction
   )
   $result = ""
   # Create a StringBuilder with 0 capacity to get string length
@@ -103,7 +105,8 @@ function Get-JavaVersion {
 # Wrapper for IsBinary64Bit() DLL function
 function Get-Binary64Bit {
   param(
-    [String] $fileName
+    [String]
+    $fileName
   )
   $result = "Unknown"
   if ( $fileName ) {
@@ -115,7 +118,7 @@ function Get-Binary64Bit {
         $result = "Yes"
       }
       else {
-        $result = "Yes"
+        $result = "No"
       }
     }
   }
@@ -125,7 +128,8 @@ function Get-Binary64Bit {
 # Wrapper for IsJavaMinimumVersion() DLL function
 function Get-JavaMinimumVersion {
   param(
-    [String] $version
+    [String]
+    $version
   )
   $result = ""
   # Variable must exist before calling as [Ref] parameter

@@ -50,6 +50,7 @@ JavaInfo.dll searches in the following registry locations for the location of th
 `HKEY_LOCAL_MACHINE\SOFTWARE\Eclipse Adoptium`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Eclipse Foundation`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Semeru`  
+`HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\JDK`  
 `HKEY_LOCAL_MACHINE\SOFTWARE\Azul Systems\Zulu`
 
 If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the registry detection can be improved.

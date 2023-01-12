@@ -1,4 +1,4 @@
-{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU Lesser General Public License as published by the Free
@@ -153,7 +153,7 @@ var
   pLoadedImage: PLOADED_IMAGE;
 begin
   ToggleWow64FsRedirection();
-  pLoadedImage := ImageLoad(PChar(UnicodeStringToString(FileName)), '');
+  pLoadedImage := ImageLoad(PChar(UnicodeStringToString(FileName, CP_ACP)), '');
   ToggleWow64FsRedirection();
   if Assigned(pLoadedImage) then
     result := 0

@@ -1,5 +1,11 @@
 # JavaInfo.dll Version History
 
+## 1.4.0.0 (2023-01-12)
+
+* Added Microsoft JDK registry detection.
+
+* Minor tweaks.
+
 ## 1.3.1.0 (2021-11-16)
 
 * Added 'Eclipse Adoptium' registry detection. (For some reason, Adoptium changed the registry location, _again_).

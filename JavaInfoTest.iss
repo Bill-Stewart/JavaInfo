@@ -1,4 +1,4 @@
-; Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+; Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 ;
 ; This program is free software; you can redistribute it and/or modify it under
 ; the terms of the GNU Lesser General Public License as published by the Free
@@ -25,7 +25,7 @@
 
 [Setup]
 AppName=JavaInfoTest
-AppVersion=1.3.1.0
+AppVersion=1.4.0.0
 UsePreviousAppDir=false
 DefaultDirName={autopf}\JavaInfoTest
 Uninstallable=false

@@ -1,4 +1,4 @@
-{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU Lesser General Public License as published by the Free
@@ -58,7 +58,7 @@ const
 var
   UsageText: UnicodeString;
 begin
-  UsageText := 'GetJavaInfo - Copyright 2020-2021 by Bill Stewart (bstewart at iname.com)' + NEWLINE
+  UsageText := 'GetJavaInfo - Copyright 2020-2023 by Bill Stewart (bstewart at iname.com)' + NEWLINE
     + 'This is free software and comes with ABSOLUTELY NO WARRANTY.' + NEWLINE
     + NEWLINE
     + 'Usage: GetJavaInfo [--javainstalled | --javahome | --javaversion |' + NEWLINE
@@ -190,7 +190,7 @@ begin
       'h': ArgHelp := true;
       'H': ArgJavaHome := true;
       'i': ArgJavaInstalled := true;
-      'm': ArgJavaMinVersion := StringToUnicodeString(OptArg);
+      'm': ArgJavaMinVersion := StringToUnicodeString(OptArg, CP_ACP);
       'q': ArgQuiet := true;
       'V': ArgJavaVersion := true;
       'v': ArgVersion := true;
