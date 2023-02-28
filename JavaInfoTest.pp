@@ -1,4 +1,4 @@
-{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU Lesser General Public License as published by the Free
@@ -32,9 +32,9 @@ type
 var
   DLLHandle: HMODULE;
   IsJavaInstalled: TGetDWORD;
-  GetJavaHome, GetJavaVersion: TGetString;
+  GetJavaHome, GetJavaJVMPath, GetJavaVersion: TGetString;
   IsBinary64Bit: TIsBinary64Bit;
-  JavaHome, JavaBinary, JavaVersion, BinaryType, Msg: UnicodeString;
+  JavaHome, JavaBinary, JavaJVMPath, JavaVersion, BinaryType, Msg: UnicodeString;
   Is64Bit: DWORD;
 
 procedure MsgBox(const Msg: UnicodeString; const MsgBoxType: UINT);
@@ -66,6 +66,7 @@ begin
     exit();
   end;
   GetJavaHome := TGetString(GetProcAddress(DLLHandle, 'GetJavaHome'));
+  GetJavaJVMPath := TGetString(GetProcAddress(DLLHandle, 'GetJavaJVMPath'));
   GetJavaVersion := TGetString(GetProcAddress(DLLHandle, 'GetJavaVersion'));
   IsBinary64Bit := TIsBinary64Bit(GetProcAddress(DLLHandle, 'IsBinary64Bit'));
   IsJavaInstalled := TGetDWORD(GetProcAddress(DLLHandle, 'IsJavaInstalled'));
@@ -84,9 +85,12 @@ begin
     end
     else
       BinaryType := 'unknown';
+    JavaJVMPath := GetString(GetJavaJVMPath);
     JavaVersion := GetString(GetJavaVersion);
-    Msg := 'Java home: ' + JavaHome + #10 + 'Java file version: ' + JavaVersion + #10 +
-      'Platform: ' + BinaryType;
+    Msg := 'Java home: ' + JavaHome + #10
+      + 'jvm.dll path: ' + JavaJVMPath + #10
+      + 'Java file version: ' + JavaVersion + #10
+      + 'Platform: ' + BinaryType;
     MsgBox(Msg, 0);
   end;
   FreeLibrary(DLLHandle);

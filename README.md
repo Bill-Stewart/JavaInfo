@@ -34,7 +34,6 @@ If JavaInfo.dll finds a Java installation, you can use the following paths to fi
 
 * _javahome_`\bin\java.exe` - Console-based Java executable
 * _javahome_`\bin\javaw.exe` - GUI-based Java executable
-* _javahome_`\bin\server\jvm.dll` - Java Virtual Machine DLL
 
 The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use the x64 DLL with x64 executables on x64 versions of Windows.
 
@@ -176,6 +175,38 @@ Specifies the number of characters needed to store the home directory string, no
 ### Return Value
 
 The `GetJavaHome()` function returns zero if it failed, or non-zero if it succeeded.
+
+---
+
+## GetJavaJVMPath
+
+The `GetJavaJVMPath()` function gets the path and filename of jvm.dll.
+
+### Syntax
+
+C/C++:
+```
+DWORD GetJavaJVMPath(LPWSTR PathName, DWORD NumChars);
+````
+
+Pascal:
+```
+function GetJavaJVMPath(PathName: PWideChar; NumChars: DWORD): DWORD;
+```
+
+### Parameters
+
+`PathName`
+
+A pointer to a variable that receives a Unicode string that contains the path and filename of jvm.dll.
+
+`NumChars`
+
+Specifies the number of characters needed to store the path string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `PathName` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
+
+### Return Value
+
+The `GetJavaJVMPath()` function returns zero if it failed, or non-zero if it succeeded.
 
 ---
 

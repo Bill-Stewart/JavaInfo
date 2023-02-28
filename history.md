@@ -1,5 +1,13 @@
 # JavaInfo.dll Version History
 
+## 1.5.0.0 (2023-02-27)
+
+* Added `GetJavaJVMPath()` function.
+
+* Added `--javadll` (`-d`) option to GetJavaInfo utility.
+
+* Updated all sample code to add `GetJavaJVMPath()` function.
+
 ## 1.4.0.0 (2023-01-12)
 
 * Added Microsoft JDK registry detection.

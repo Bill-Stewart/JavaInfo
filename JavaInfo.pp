@@ -1,4 +1,4 @@
-{ Copyright (C) 2020-2021 by Bill Stewart (bstewart at iname.com)
+{ Copyright (C) 2020-2023 by Bill Stewart (bstewart at iname.com)
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU Lesser General Public License as published by the Free
@@ -16,8 +16,9 @@
 }
 
 {
-  Note Regarding the GetJavaHome() and GetJavaVersion() Functions
-  ===============================================================
+  Note Regarding the GetJavaHome(), GetJavaJVMPath(), and GetJavaVersion()
+  Functions
+  ========================================================================
   You must allocate a buffer to get the result strings from these functions. To
   determine the required buffer size, call the function with a null pointer for
   the first parameter and 0 for the second parameter. The function will return
@@ -107,6 +108,15 @@ begin
   result := GetString(StringFunction, PathName, NumChars);
 end;
 
+// Gets path of jvm.dll into string buffer pointed to by PathName.
+function GetJavaJVMPath(PathName: PWideChar; NumChars: DWORD): DWORD; stdcall;
+var
+  StringFunction: TStringFunction;
+begin
+  StringFunction := @wsGetJavaJVMPath;
+  result := GetString(StringFunction, PathName, NumChars);
+end;
+
 // Gets Java version string (a.b.c.d) into string buffer pointed to by Version.
 function GetJavaVersion(Version: PWideChar; NumChars: DWORD): DWORD; stdcall;
 var
@@ -164,6 +174,7 @@ end;
 
 exports
   GetJavaHome,
+  GetJavaJVMPath,
   GetJavaVersion,
   IsBinary64Bit,
   IsJavaInstalled,

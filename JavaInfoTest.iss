@@ -25,7 +25,7 @@
 
 [Setup]
 AppName=JavaInfoTest
-AppVersion=1.4.0.0
+AppVersion=1.5.0.0
 UsePreviousAppDir=false
 DefaultDirName={autopf}\JavaInfoTest
 Uninstallable=false
@@ -57,6 +57,8 @@ function DLLIsJavaMinimumVersion(Version: string; var VersionOK: DWORD): DWORD;
   external 'IsJavaMinimumVersion@files:JavaInfo.dll stdcall setuponly';
 function DLLGetJavaHome(PathName: string; NumChars: DWORD): DWORD;
   external 'GetJavaHome@files:JavaInfo.dll stdcall setuponly';
+function DLLGetJavaJVMPath(PathName: string; NumChars: DWORD): DWORD;
+  external 'GetJavaJVMPath@files:JavaInfo.dll stdcall setuponly';
 function DLLGetJavaVersion(Version: string; NumChars: DWORD): DWORD;
   external 'GetJavaVersion@files:JavaInfo.dll stdcall setuponly';
 // Note that 'var' parameters above are pointers
@@ -102,6 +104,19 @@ begin
   NumChars := DLLGetJavaHome('', 0);
   SetLength(OutStr, NumChars);
   if DLLGetJavaHome(OutStr, NumChars) > 0 then
+    result := OutStr;
+end;
+
+// Wrapper for GetJavaJVMPath() DLL function (same note as above)
+function GetJavaJVMPath(): string;
+var
+  NumChars: DWORD;
+  OutStr: string;
+begin
+  result := '';
+  NumChars := DLLGetJavaJVMPath('', 0);
+  SetLength(OutStr, NumChars);
+  if DLLGetJavaJVMPath(OutStr, NumChars) > 0 then
     result := OutStr;
 end;
 
@@ -222,7 +237,7 @@ end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
-  MinVersion, JavaHome, Message: string;
+  MinVersion, JavaHome, JavaJVMPath, Message: string;
 begin
   result := true;
   // Check if current page is the custom Java version page
@@ -241,6 +256,7 @@ begin
     begin
       JavaHome := GetJavaHome();
       Message := 'Java home: ' + JavaHome + #10
+        + 'Java JVM path: ' + GetJavaJVMPath + #10
         + 'Java version: ' + GetJavaVersion() + #10
         + 'Java is 64-bit: ' + BoolToStr(IsBinary64Bit(JavaHome + '\bin\java.exe')) + #10
         + 'At least version ' + MinVersion + ': ' + IsJavaMinimumVersion(MinVersion);

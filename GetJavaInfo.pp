@@ -41,6 +41,7 @@ type
     ArgVersion:        Boolean;        // --version/v
     ArgJavaIs64Bit:    Boolean;        // --javais64bit/-b
     ArgJavaHome:       Boolean;        // --javahome/-H
+    ArgJavaDLL:        Boolean;        // --javadll/-d
     ArgJavaInstalled:  Boolean;        // --javainstalled/-i
     ArgJavaMinVersion: UnicodeString;  // --javaminversion/-m
     ArgJavaVersion:    Boolean;        // --javaversion/-V
@@ -50,7 +51,7 @@ type
 var
   CommandLine: TCommandLine;
   JavaDetected, JavaIs64Bit, VersionOK: Boolean;
-  JavaHome, JavaVersion, OutputStr: UnicodeString;
+  JavaHome, JavaJVMPath, JavaVersion, OutputStr: UnicodeString;
 
 procedure Usage();
 const
@@ -71,6 +72,7 @@ begin
     + '----------------  -------  -------------------------------------' + NEWLINE
     + '--javainstalled   -i       Tests if Java is installed' + NEWLINE
     + '--javahome        -H       Outputs Java home directory' + NEWLINE
+    + '--javadll         -d       Outputs jvm.dll path' + NEWLINE
     + '--javaversion     -V       Outputs Java version' + NEWLINE
     + '--javais64bit     -b       Tests if Java is 64-bit' + NEWLINE
     + '--version         -v       Outputs this program''s version number' + NEWLINE
@@ -102,7 +104,7 @@ end;
 
 procedure TCommandLine.Parse();
 var
-  LongOpts: array[1..9] of TOption;
+  LongOpts: array[1..10] of TOption;
   Opt: Char;
   I: LongInt;
 begin
@@ -117,10 +119,10 @@ begin
   end;
   with LongOpts[2] do
   begin
-    Name := 'help';
+    Name := 'javadll';
     Has_arg := No_Argument;
-    Flag := nil;
-    Value := 'h';
+    flag := nil;
+    Value := 'd';
   end;
   with LongOpts[3] do
   begin
@@ -131,40 +133,47 @@ begin
   end;
   with LongOpts[4] do
   begin
+    Name := 'help';
+    Has_arg := No_Argument;
+    Flag := nil;
+    Value := 'h';
+  end;
+  with LongOpts[5] do
+  begin
     Name := 'javainstalled';
     Has_arg := No_Argument;
     Flag := nil;
     Value := 'i';
   end;
-  with LongOpts[5] do
+  with LongOpts[6] do
   begin
     Name := 'javaminversion';
     Has_arg := Required_Argument;
     Flag := nil;
     Value := 'm';
   end;
-  with LongOpts[6] do
+  with LongOpts[7] do
   begin
     Name := 'quiet';
     Has_arg := No_Argument;
     Flag := nil;
     Value := 'q';
   end;
-  with LongOpts[7] do
+  with LongOpts[8] do
   begin
     Name := 'javaversion';
     Has_arg := No_Argument;
     Flag := nil;
     Value := 'V';
   end;
-  with LongOpts[8] do
+  with LongOpts[9] do
   begin
     Name := 'version';
     Has_arg := No_Argument;
     Flag := nil;
     Value := 'v';
   end;
-  with LongOpts[9] do
+  with LongOpts[10] do
   begin
     Name := '';
     Has_arg := No_Argument;
@@ -179,16 +188,18 @@ begin
   ArgVersion := false;        // --version/v
   ArgJavaIs64Bit := false;    // --javais64bit/-b
   ArgJavaHome := false;       // --javahome/-H
+  ArgJavaDLL := false;        // --javadll/-d
   ArgJavaInstalled := false;  // --javainstalled/-i
   ArgJavaMinVersion := '';    // --javaminversion/-m
   ArgJavaVersion := false;    // --javaversion/-V
   OptErr := false;  // no error outputs from getopts
   repeat
-    Opt := GetLongOpts('bhHim:qVv', @LongOpts, I);
+    Opt := GetLongOpts('bdHhim:qVv', @LongOpts, I);
     case Opt of
       'b': ArgJavaIs64Bit := true;
-      'h': ArgHelp := true;
+      'd': ArgJavaDLL := true;
       'H': ArgJavaHome := true;
+      'h': ArgHelp := true;
       'i': ArgJavaInstalled := true;
       'm': ArgJavaMinVersion := StringToUnicodeString(OptArg, CP_ACP);
       'q': ArgQuiet := true;
@@ -247,6 +258,7 @@ begin
   // Initialize variables
   JavaDetected := wsIsJavaInstalled();
   JavaHome := '';
+  JavaJVMPath := '';
   JavaVersion := '';
   JavaIs64Bit := false;
 
@@ -254,6 +266,7 @@ begin
   if JavaDetected then
   begin
     JavaHome := wsGetJavaHome();
+    JavaJVMPath := wsGetJavaJVMPath();
     JavaVersion := wsGetJavaVersion();
     if wsIsBinary64Bit(JavaHome + '\bin\java.exe', JavaIs64Bit) <> 0 then
       JavaIs64Bit := false;
@@ -321,18 +334,21 @@ begin
     end;
   end;
 
-  if not (CommandLine.ArgJavaHome or CommandLine.ArgJavaVersion) then
+  if not (CommandLine.ArgJavaHome or CommandLine.ArgJavaDLL or CommandLine.ArgJavaVersion) then
   begin
     OutputStr := 'Java home:' + #9 + JavaHome + NEWLINE
+      + 'jvm.dll path:' + #9 + JavaJVMPath + NEWLINE
       + 'Java version:' + #9 + JavaVersion + NEWLINE
       + 'Java is 64-bit:' + #9 + BoolToStr(JavaIs64Bit);
     WriteLn(OutputStr);
     exit();
   end;
 
-  // --javahome/-H or --javaversion/-V
+  // --javahome/-H or --javadll/-d or --javaversion/-V
   if CommandLine.ArgJavaHome then
     WriteLn(JavaHome)
+  else if CommandLine.ArgJavaDLL then
+    WriteLn(JavaJVMPath)
   else if CommandLine.ArgJavaVersion then
     WriteLn(JavaVersion);
 end.

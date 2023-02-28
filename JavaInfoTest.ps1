@@ -58,6 +58,12 @@ public static extern uint GetJavaHome(
 );
 
 [DllImport("{0}\\JavaInfo.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern uint GetJavaJVMPath(
+  StringBuilder PathName,
+  uint          NumChars
+);
+
+[DllImport("{0}\\JavaInfo.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 public static extern uint GetJavaVersion(
   StringBuilder Version,
   uint          NumChars
@@ -95,6 +101,10 @@ function Get-DLLString {
 # Wrapper for GetJavaHome() DLL function
 function Get-JavaHome {
   Get-DLLString ($JavaInfo::GetJavaHome)
+}
+
+function Get-JavaJVMPath {
+  Get-DLLString ($JavaInfo::GetJavaJVMPath)
 }
 
 # Wrapper for GetJavaVersion() DLL function
@@ -158,8 +168,10 @@ catch {
 
 if ( $IsJavaInstalled ) {
   $JavaHome = Get-JavaHome
+  $JavaJVMPath = Get-JavaJVMPath
   $JavaBinary = Join-Path $JavaHome "bin\java.exe"
   "Java home:`t{0}" -f $JavaHome
+  "jvm.dll path:`t{0}" -f $JavaJVMPath
   "Java version:`t{0}" -f (Get-JavaVersion)
   "Java is 64-bit:`t{0}" -f (Get-Binary64Bit $JavaBinary)
   if ( $MinimumVersion ) {

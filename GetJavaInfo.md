@@ -32,6 +32,7 @@ Without command-line parameters, GetJavaInfo outputs Java installation details. 
 | ------------------ | ------------ | -------------------------------------
 | `--javainstalled`  | `-i`         | Tests if Java is installed
 | `--javahome`       | `-H`         | Outputs Java home directory
+| `--javadll`        | `-d`         | Outputs jvm.dll path
 | `--javaversion`    | `-V`         | Outputs Java version
 | `--javais64bit`    | `-b`         | Tests if Java is 64-bit
 | `--version`        | `-v`         | Outputs this program's version number
@@ -101,7 +102,7 @@ In this example, GetJavaInfo will return one of the following exit codes:
         :END
         endlocal
 
-    This script sets the `_JHOME` environment variable to the Java home directory if Java is installed. The variable will not be set if Java is not instaled.
+    This script sets the `_JHOME` environment variable within the script to the Java home directory if Java is installed. The variable will not be set if Java is not instaled.
 
 3.  Sample batch file (cmd.exe shell script) for checking whether Java is installed and is at least a minimum version:
 
@@ -115,6 +116,21 @@ In this example, GetJavaInfo will return one of the following exit codes:
         goto :END
         :VER_OK
         echo At least Java %_JMINVER% is installed
+        goto :END
+        :NOJAVA
+        echo Java is not installed
+        :END
+        endlocal
+
+4.  Sample batch file (cmd.exe shell script) for getting the path and filename of jvm.dll in an environment variable:
+
+        @echo off
+        setlocal enableextensions
+        GetJavaInfo -i -q
+        if errorlevel 2 goto :NOJAVA
+        set _JVMPATH=
+        for /f "delims=" %%a in ('GetJavaInfo --javadll') do set _JVMPATH=%%a
+        echo jvm.dll path: %_JVMPATH%
         goto :END
         :NOJAVA
         echo Java is not installed

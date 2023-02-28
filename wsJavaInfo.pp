@@ -33,6 +33,9 @@ function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
 // If Java installation found, returns path of Java home directory
 function wsGetJavaHome(): UnicodeString;
 
+// If Java installation found, returns path for jvm.dll
+function wsGetJavaJVMPath(): UnicodeString;
+
 // If Java installation found, returns version number of java.exe as a string
 // (a.b.c.d)
 function wsGetJavaVersion(): UnicodeString;
@@ -58,7 +61,7 @@ uses
   wsUtilStr;
 
 var
-  JavaHome, JavaVersion: UnicodeString;
+  JavaHome, JavaJVMPath, JavaVersion: UnicodeString;
   JavaDetectionType: TJavaDetectionType;
 
 function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
@@ -391,15 +394,19 @@ begin
   end;
 end;
 
-procedure GetJavaDetail(var JavaHome, JavaVersion: UnicodeString; var JavaDetectionType: TJavaDetectionType);
+procedure GetJavaDetail(var JavaHome, JavaJVMPath, JavaVersion: UnicodeString;
+  var JavaDetectionType: TJavaDetectionType);
 var
-  CurrentHome, CurrentVersion, LatestVersion, LatestHome: UnicodeString;
+  CurrentHome, CurrentVersion, LatestVersion, LatestHome, JVMPath: UnicodeString;
   LatestDetectionType: TJavaDetectionType;
+  JVMFound: Boolean;
 begin
   // Initialize
   JavaHome := '';
+  JavaJVMPath := '';
   JavaVersion := '';
   JavaDetectionType := JDNone;
+  JVMFound := false;
   // Environment variable search: Exit if found
   CurrentHome := FindJavaHomeEnvironment();
   CurrentVersion := GetJavaVersion(CurrentHome);
@@ -487,6 +494,15 @@ begin
   if (LatestHome <> '') and (LatestVersion <> '0') then
   begin
     JavaHome := LatestHome;
+    JVMPath := JoinPath(JavaHome, 'bin\server\jvm.dll');
+    JVMFound := FileExists(JVMPath);
+    if not JVMFound then
+    begin
+      JVMPath := JoinPath(JavaHome, 'jre\bin\server\jvm.dll');
+      JVMFound := FileExists(JVMPath);
+    end;
+    if JVMFound then
+      JavaJVMPath := JVMPath;
     JavaVersion := LatestVersion;
     JavaDetectionType := LatestDetectionType;
   end;
@@ -495,6 +511,11 @@ end;
 function wsGetJavaHome(): UnicodeString;
 begin
   result := RemoveBackslashUnlessRoot(JavaHome);
+end;
+
+function wsGetJavaJVMPath(): UnicodeString;
+begin
+  result := JavaJVMPath;
 end;
 
 function wsGetJavaVersion(): UnicodeString;
@@ -521,6 +542,6 @@ begin
 end;
 
 initialization
-  GetJavaDetail(JavaHome, JavaVersion, JavaDetectionType);
+  GetJavaDetail(JavaHome, JavaJVMPath, JavaVersion, JavaDetectionType);
 
 end.
