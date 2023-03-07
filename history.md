@@ -1,5 +1,9 @@
 # JavaInfo.dll Version History
 
+## 1.5.1.0 (2023-03-07)
+
+* Fixed bug in `jvm.dll` path detection.
+
 ## 1.5.0.0 (2023-02-27)
 
 * Added `GetJavaJVMPath()` function.

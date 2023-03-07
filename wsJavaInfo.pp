@@ -394,19 +394,33 @@ begin
   end;
 end;
 
+function GetJVMPath(const Home: UnicodeString): UnicodeString;
+var
+  Binary: UnicodeString;
+begin
+  result := '';
+  if (Home <> '') and DirExists(Home) then
+  begin
+    Binary := JoinPath(Home, 'bin\server\jvm.dll');
+    if FileExists(Binary) then
+      exit(Binary);
+    Binary := JoinPath(Home, 'jre\bin\server\jvm.dll');
+    if FileExists(Binary) then
+      exit(Binary);
+  end;
+end;
+
 procedure GetJavaDetail(var JavaHome, JavaJVMPath, JavaVersion: UnicodeString;
   var JavaDetectionType: TJavaDetectionType);
 var
-  CurrentHome, CurrentVersion, LatestVersion, LatestHome, JVMPath: UnicodeString;
+  CurrentHome, CurrentVersion, LatestVersion, LatestHome: UnicodeString;
   LatestDetectionType: TJavaDetectionType;
-  JVMFound: Boolean;
 begin
   // Initialize
   JavaHome := '';
   JavaJVMPath := '';
   JavaVersion := '';
   JavaDetectionType := JDNone;
-  JVMFound := false;
   // Environment variable search: Exit if found
   CurrentHome := FindJavaHomeEnvironment();
   CurrentVersion := GetJavaVersion(CurrentHome);
@@ -414,6 +428,7 @@ begin
   begin
     JavaHome := CurrentHome;
     JavaVersion := CurrentVersion;
+    JavaJVMPath := GetJVMPath(JavaHome);
     JavaDetectionType := JDEnvironment;
     exit();
   end;
@@ -424,6 +439,7 @@ begin
   begin
     JavaHome := CurrentHome;
     JavaVersion := CurrentVersion;
+    JavaJVMPath := GetJVMPath(JavaHome);
     JavaDetectionType := JDPath;
     exit();
   end;
@@ -494,15 +510,7 @@ begin
   if (LatestHome <> '') and (LatestVersion <> '0') then
   begin
     JavaHome := LatestHome;
-    JVMPath := JoinPath(JavaHome, 'bin\server\jvm.dll');
-    JVMFound := FileExists(JVMPath);
-    if not JVMFound then
-    begin
-      JVMPath := JoinPath(JavaHome, 'jre\bin\server\jvm.dll');
-      JVMFound := FileExists(JVMPath);
-    end;
-    if JVMFound then
-      JavaJVMPath := JVMPath;
+    JavaJVMPath := GetJVMPath(JavaHome);
     JavaVersion := LatestVersion;
     JavaDetectionType := LatestDetectionType;
   end;
