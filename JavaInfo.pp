@@ -42,7 +42,7 @@
     // Second call: Get the string
     if GetJavaHome(OutStr, NumChars) > 0 then
       result := OutStr;
-    FreeMem(OutStr, BufSize);
+    FreeMem(OutStr);
   end;
 
   // Example using UnicodeString
@@ -64,7 +64,7 @@
 }
 
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 {$R *.res}
 
 library JavaInfo;
@@ -74,24 +74,24 @@ uses
   wsJavaInfo;
 
 type
-  TStringFunction = function(): UnicodeString;
+  TStringFunction = function(): string;
 
 // Copies Source to Dest.
-procedure CopyString(const Source: UnicodeString; Dest: PWideChar);
+procedure CopyString(const Source: string; Dest: PChar);
 var
   NumChars: DWORD;
 begin
   NumChars := Length(Source);
-  Move(Source[1], Dest^, NumChars * SizeOf(WideChar));
+  Move(Source[1], Dest^, NumChars * SizeOf(Char));
   Dest[NumChars] := #0;
 end;
 
 // First parameter is address of string function you want to call. Returns
 // number of characters needed for output buffer, not including the terminating
 // null character.
-function GetString(var StringFunction: TStringFunction; Buffer: PWideChar; const NumChars: DWORD): DWORD;
+function GetString(var StringFunction: TStringFunction; Buffer: PChar; const NumChars: DWORD): DWORD;
 var
-  OutStr: UnicodeString;
+  OutStr: string;
 begin
   OutStr := StringFunction();
   if (Length(OutStr) > 0) and Assigned(Buffer) and (NumChars >= Length(OutStr)) then
@@ -100,7 +100,7 @@ begin
 end;
 
 // Gets Java home directory into string buffer pointed to by PathName.
-function GetJavaHome(PathName: PWideChar; NumChars: DWORD): DWORD; stdcall;
+function GetJavaHome(PathName: PChar; NumChars: DWORD): DWORD; stdcall;
 var
   StringFunction: TStringFunction;
 begin
@@ -109,7 +109,7 @@ begin
 end;
 
 // Gets path of jvm.dll into string buffer pointed to by PathName.
-function GetJavaJVMPath(PathName: PWideChar; NumChars: DWORD): DWORD; stdcall;
+function GetJavaJVMPath(PathName: PChar; NumChars: DWORD): DWORD; stdcall;
 var
   StringFunction: TStringFunction;
 begin
@@ -118,7 +118,7 @@ begin
 end;
 
 // Gets Java version string (a.b.c.d) into string buffer pointed to by Version.
-function GetJavaVersion(Version: PWideChar; NumChars: DWORD): DWORD; stdcall;
+function GetJavaVersion(Version: PChar; NumChars: DWORD): DWORD; stdcall;
 var
   StringFunction: TStringFunction;
 begin
@@ -129,7 +129,7 @@ end;
 // Retrieves whether a specified binary is 64-bit or not to the Is64Bit
 // parameter. Returns 0 for success, or non-zero for failure. If successful,
 // value pointed to by Is64Bit will be 0 if not 64-bit, or 1 otherwise.
-function IsBinary64Bit(FileName: PWideChar; Is64Bit: PDWORD): DWORD; stdcall;
+function IsBinary64Bit(FileName: PChar; Is64Bit: PDWORD): DWORD; stdcall;
 var
   Is64: Boolean;
 begin
@@ -156,7 +156,7 @@ end;
 // version to the VersionOK parameter. Returns 0 for success, or non-zero for
 // failure. If successful, the value pointed to by VersionOK will be 1 if the
 // installed Java version is at least the specified version, or 0 otherwise.
-function IsJavaMinimumVersion(Version: PWideChar; VersionOK: PDWORD): DWORD; stdcall;
+function IsJavaMinimumVersion(Version: PChar; VersionOK: PDWORD): DWORD; stdcall;
 var
   IsOK: Boolean;
 begin

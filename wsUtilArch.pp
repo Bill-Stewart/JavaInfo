@@ -16,14 +16,11 @@
 }
 
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 
 unit wsUtilArch;
 
 interface
-
-uses
-  Windows;
 
 // Returns true if the current OS is 64-bit or false otherwise
 function IsWin64(): Boolean;
@@ -33,6 +30,9 @@ function IsWin64(): Boolean;
 function IsProcessWoW64(): Boolean;
 
 implementation
+
+uses
+  Windows;
 
 function IsProcessor64Bit(): Boolean;
 const
@@ -50,11 +50,12 @@ var
   SystemInfo: SYSTEM_INFO;
 begin
   result := false;
-  Kernel32 := GetModuleHandle('kernel32');
-  GetNativeSystemInfo := TGetNativeSystemInfo(GetProcAddress(Kernel32, 'GetNativeSystemInfo'));
+  Kernel32 := GetModuleHandleW('kernel32');  // LPCWSTR lpModuleName
+  GetNativeSystemInfo := TGetNativeSystemInfo(GetProcAddress(Kernel32,  // HMODULE hModule
+    'GetNativeSystemInfo'));                                            // LPCSTR  lpProcName
   if Assigned(GetNativeSystemInfo) then
   begin
-    GetNativeSystemInfo(SystemInfo);
+    GetNativeSystemInfo(SystemInfo);  // LPSYSTEM_INFO lpSystemInfo
     with SystemInfo do
       result := (wProcessorArchitecture = PROCESSOR_ARCHITECTURE_IA64) or
         (wProcessorArchitecture = PROCESSOR_ARCHITECTURE_AMD64) or
@@ -72,8 +73,9 @@ var
   IsWoW64: BOOL;
 begin
   result := false;
-  Kernel32 := GetModuleHandle('kernel32');
-  IsWow64Process := TIsWow64Process(GetProcAddress(Kernel32, 'IsWow64Process'));
+  Kernel32 := GetModuleHandleW('kernel32');  // LPCWSTR lpModuleName
+  IsWow64Process := TIsWow64Process(GetProcAddress(Kernel32,  // HMODULE hModule
+    'IsWow64Process'));                                       // LPCSTR  lpProcName
   if Assigned(IsWow64Process) then
   begin
     ProcessHandle := OpenProcess(PROCESS_QUERY_INFORMATION,  // DWORD dwDesiredAccess
@@ -81,9 +83,12 @@ begin
       GetCurrentProcessId());                                // DWORD dwProcessId
     if ProcessHandle <> 0 then
     begin
-      if IsWow64Process(ProcessHandle, IsWoW64) then
+      if IsWow64Process(ProcessHandle,  // HANDLE hProcess
+        IsWoW64) then                   // PBOOL  Wow64Process
+      begin
         result := IsWoW64;
-      CloseHandle(ProcessHandle);
+      end;
+      CloseHandle(ProcessHandle);  // HANDLE hObject
     end;
   end;
 end;

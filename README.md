@@ -1,20 +1,51 @@
+<!-- omit from toc -->
 # JavaInfo.dll
 
 JavaInfo.dll is a Windows DLL (dynamically linked library) that provides information about Java installations.
 
-# Author
+- [Author](#author)
+- [License](#license)
+- [Download](#download)
+- [Background](#background)
+- [Registry Searches](#registry-searches)
+- [Functions](#functions)
+  - [IsBinary64Bit](#isbinary64bit)
+    - [Syntax](#syntax)
+    - [Parameters](#parameters)
+    - [Return Value](#return-value)
+  - [IsJavaInstalled](#isjavainstalled)
+    - [Syntax](#syntax-1)
+    - [Return Value](#return-value-1)
+  - [IsJavaMinimumVersion](#isjavaminimumversion)
+    - [Syntax](#syntax-2)
+    - [Parameters](#parameters-1)
+    - [Return Value](#return-value-2)
+  - [GetJavaHome](#getjavahome)
+    - [Syntax](#syntax-3)
+    - [Parameters](#parameters-2)
+    - [Return Value](#return-value-3)
+  - [GetJavaJVMPath](#getjavajvmpath)
+    - [Syntax](#syntax-4)
+    - [Parameters](#parameters-3)
+    - [Return Value](#return-value-4)
+  - [GetJavaVersion](#getjavaversion)
+    - [Syntax](#syntax-5)
+    - [Parameters](#parameters-4)
+    - [Return Value](#return-value-5)
+
+## Author
 
 Bill Stewart - bstewart at iname dot com
 
-# License
+## License
 
 JavaInfo.dll is covered by the GNU Lesser Public License (LPGL). See the file `LICENSE` for details.
 
-# Download
+## Download
 
 https://github.com/Bill-Stewart/JavaInfo/releases/
 
-# Background
+## Background
 
 A Java Development Kit (JDK) or Java Runtime Environment (JRE) is required to run Java applications, but there's not a standard way to detect whether Java is installed and details about it. JavaInfo.dll provides this information. For example, you can use JavaInfo.dll in an installer or a Java application launcher executable to detect if Java is installed.
 
@@ -39,7 +70,7 @@ The 32-bit (x86) DLL works on both 32-bit and 64-bit versions of Windows. Use th
 
 > NOTE: When you use the the 32-bit DLL on 64-bit Windows, it correctly handles 32-bit registry and file system redirection. (That is, the 32-bit DLL can correctly detect 64-bit Java installations and return the correct path.)
 
-# Registry Searches
+## Registry Searches
 
 JavaInfo.dll searches in the following registry locations for the location of the Java home directory:
 
@@ -54,17 +85,17 @@ JavaInfo.dll searches in the following registry locations for the location of th
 
 If other versions of Java are available that JavaInfo.dll does not detect in the registry, please contact the author so the registry detection can be improved.
 
-# Functions
+## Functions
 
 This section documents the functions exported by JavaInfo.dll.
 
 ---
 
-## IsBinary64Bit()
+### IsBinary64Bit
 
-The `IsBinary64Bit()` function detects whether a Windows binary file is 32-bit or 64-bit.
+The `IsBinary64Bit` function detects whether a Windows binary file is 32-bit or 64-bit.
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
@@ -76,7 +107,7 @@ Pascal:
 function IsBinary64Bit(FileName: PWideChar; Is64Bit: PDWORD): DWORD;
 ```
 
-### Parameters
+#### Parameters
 
 `FileName`
 
@@ -84,41 +115,41 @@ A Unicode string containing the name of a binary file (exe or dll).
 
 `Is64Bit`
 
-A pointer to a variable that gets set to 1 if the specified binary file is 64-bit, or 0 otherwise. The value of this variable is not defined if the `IsBinary64Bit()` function fails.
+A pointer to a variable that gets set to 1 if the specified binary file is 64-bit, or 0 otherwise. The value of this variable is not defined if the `IsBinary64Bit` function fails.
 
-### Return Value
+#### Return Value
 
-The `IsBinary64Bit()` function returns 0 for success, or non-zero for failure.
+The `IsBinary64Bit` function returns 0 for success, or non-zero for failure.
 
 ---
 
-## IsJavaInstalled()
+### IsJavaInstalled
 
-The `IsJavaInstalled()` function detects whether Java is installed.
+The `IsJavaInstalled` function detects whether Java is installed.
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
-DWORD IsJavaInstalled();
+DWORD IsJavaInstalled;
 ```
 
 Pascal:
 ```
-function IsJavaInstalled(): DWORD;
+function IsJavaInstalled: DWORD;
 ```
 
-### Return Value
+#### Return Value
 
-The `IsJavaInstalled()` function returns zero if no Java installations were detected, or non-zero otherwise.
+The `IsJavaInstalled` function returns zero if no Java installations were detected, or non-zero otherwise.
 
 ---
 
-## IsJavaMinimumVersion()
+### IsJavaMinimumVersion
 
-The `IsJavaMinimumVersion()` function checks whether the installed Java version is at least a specified version.
+The `IsJavaMinimumVersion` function checks whether the installed Java version is at least a specified version.
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
@@ -130,7 +161,7 @@ Pascal:
 function IsJavaMinimumVersion(Version: PWideChar; VersionOK: PDWORD): DWORD;
 ```
 
-### Parameters
+#### Parameters
 
 `Version`
 
@@ -138,19 +169,19 @@ A Unicode string containing a version number. The string can contain from 1 to 4
 
 `VersionOK`
 
-A pointer to a variable that gets set to 1 if the installed Java version is at least the version specified in the `Version` parameter, or 0 otherwise. The value of this variable is not defined if the `IsJavaMinimumVersion()` function fails.
+A pointer to a variable that gets set to 1 if the installed Java version is at least the version specified in the `Version` parameter, or 0 otherwise. The value of this variable is not defined if the `IsJavaMinimumVersion` function fails.
 
-### Return Value
+#### Return Value
 
-The `IsJavaMinimumVersion()` function returns 0 for success, or non-zero for failure. If the version specified in the `Version` parameter is not a valid version number string, the function will return error code 87 (`ERROR_INVALID_PARAMETER`).
+The `IsJavaMinimumVersion` function returns 0 for success, or non-zero for failure. If the version specified in the `Version` parameter is not a valid version number string, the function will return error code 87 (`ERROR_INVALID_PARAMETER`).
 
 ---
 
-## GetJavaHome
+### GetJavaHome
 
-The `GetJavaHome()` function gets the Java home directory.
+The `GetJavaHome` function gets the Java home directory.
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
@@ -162,7 +193,7 @@ Pascal:
 function GetJavaHome(PathName: PWideChar; NumChars: DWORD): DWORD;
 ```
 
-### Parameters
+#### Parameters
 
 `PathName`
 
@@ -172,17 +203,17 @@ A pointer to a variable that receives a Unicode string that contains the Java ho
 
 Specifies the number of characters needed to store the home directory string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `PathName` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
 
-### Return Value
+#### Return Value
 
-The `GetJavaHome()` function returns zero if it failed, or non-zero if it succeeded.
+The `GetJavaHome` function returns zero if it failed, or non-zero if it succeeded.
 
 ---
 
-## GetJavaJVMPath
+### GetJavaJVMPath
 
-The `GetJavaJVMPath()` function gets the path and filename of jvm.dll.
+The `GetJavaJVMPath` function gets the path and filename of jvm.dll.
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
@@ -194,7 +225,7 @@ Pascal:
 function GetJavaJVMPath(PathName: PWideChar; NumChars: DWORD): DWORD;
 ```
 
-### Parameters
+#### Parameters
 
 `PathName`
 
@@ -204,17 +235,17 @@ A pointer to a variable that receives a Unicode string that contains the path an
 
 Specifies the number of characters needed to store the path string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `PathName` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
 
-### Return Value
+#### Return Value
 
-The `GetJavaJVMPath()` function returns zero if it failed, or non-zero if it succeeded.
+The `GetJavaJVMPath` function returns zero if it failed, or non-zero if it succeeded.
 
 ---
 
-## GetJavaVersion()
+### GetJavaVersion
 
-The `GetJavaVersion()` function gets the version of Java as a string in the following format: _n_`.`_n_`.`_n_`.`_n_ (where _n_ is a value between 0 and 65535, inclusive).
+The `GetJavaVersion` function gets the version of Java as a string in the following format: _n_`.`_n_`.`_n_`.`_n_ (where _n_ is a value between 0 and 65535, inclusive).
 
-### Syntax
+#### Syntax
 
 C/C++:
 ```
@@ -226,7 +257,7 @@ Pascal:
 function GetJavaVersion(Version: PWideChar; NumChars: DWORD): DWORD;
 ```
 
-### Parameters
+#### Parameters
 
 `Version`
 
@@ -236,6 +267,6 @@ A pointer to a variable that receives a Unicode string that contains the Java ve
 
 Specifies the number of characters needed to store the version number string, not including the terminating null character. To get the required number of characters needed, call the function twice. In the first call to the function, specify a null pointer for the `Version` parameter and `0` for the `NumChars` parameter. The function will return with the number of characters required for the buffer. Allocate a buffer of sufficient size (don't forget to include the terminating null character), then call the function a second time to retrieve the string.
 
-### Return Value
+#### Return Value
 
-The `GetJavaVersion()` function returns zero if it failed, or non-zero if it succeeded.
+The `GetJavaVersion` function returns zero if it failed, or non-zero if it succeeded.

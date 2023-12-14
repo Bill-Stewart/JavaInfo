@@ -20,12 +20,12 @@
 ; Only works with Unicode versions of IS 5.6 or later, or IS 6.x or later (6.x
 ; and later versions are all Unicode)
 #ifndef UNICODE
-  #error This script requires Unicode Inno Setup
+#error This script requires Unicode Inno Setup
 #endif
 
 [Setup]
 AppName=JavaInfoTest
-AppVersion=1.5.0.0
+AppVersion=1.6.0.0
 UsePreviousAppDir=false
 DefaultDirName={autopf}\JavaInfoTest
 Uninstallable=false

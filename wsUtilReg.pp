@@ -16,15 +16,17 @@
 }
 
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 
 unit wsUtilReg;
 
 interface
 
 uses
-  Windows,
-  wsUtilStr;
+  Windows;
+
+type
+  TStringArray = array of string;
 
 const
   HKEY_LOCAL_MACHINE_64 = $80000102;
@@ -35,16 +37,16 @@ const
 
 // Gets registry subkey names into Names array; returns true for success
 // or false for failure
-function RegGetSubKeyNames(RootKey: HKEY; const SubKeyName: UnicodeString;
-  var Names: TArrayOfString): Boolean;
+function RegGetSubKeyNames(RootKey: HKEY; const SubKeyName: string;
+  var Names: TStringArray): Boolean;
 
 // Returns true if the specified registry subkey exists or false otherwise
-function RegKeyExists(RootKey: HKEY; const SubKeyName: UnicodeString): Boolean;
+function RegKeyExists(RootKey: HKEY; const SubKeyName: string): Boolean;
 
 // Returns the ValueName value from the specified key and subkey into
 // ResultStr; returns true for success or false for failure
-function RegQueryStringValue(RootKey: HKEY; const SubKeyName, ValueName: UnicodeString;
-  var ResultStr: UnicodeString): Boolean;
+function RegQueryStringValue(RootKey: HKEY; const SubKeyName, ValueName: string;
+  var ResultStr: string): Boolean;
 
 implementation
 
@@ -63,8 +65,8 @@ begin
   end;
 end;
 
-function RegGetSubKeyNames(RootKey: HKEY; const SubKeyName: UnicodeString;
-  var Names: TArrayOfString): Boolean;
+function RegGetSubKeyNames(RootKey: HKEY; const SubKeyName: string;
+  var Names: TStringArray): Boolean;
 var
   AccessFlags: REGSAM;
   hkHandle: HANDLE;
@@ -73,14 +75,14 @@ var
   NumValues: DWORD;
   MaxValueNameLen: DWORD;
   MaxValueLen: DWORD;
-  Name: PWideChar;
+  Name: PChar;
   I: DWORD;
   MaxSubKeyNameLen2: DWORD;
 begin
   AccessFlags := KEY_READ;
   UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,  // HKEY   hKey
-    PWideChar(SubKeyName),          // LPCSTR lpSubKey
+    PChar(SubKeyName),              // LPCSTR lpSubKey
     0,                              // DWORD  ulOptions
     AccessFlags,                    // REGSAM samdesired
     hkHandle) = 0;                  // PHKEY  phkResult
@@ -103,7 +105,7 @@ begin
     if NumSubKeys > 0 then
     begin
       // lpcbMaxValueNameLen doesn't include terminating null
-      MaxSubKeyNameLen := (MaxSubKeyNameLen * SizeOf(WideChar)) + SizeOf(WideChar);
+      MaxSubKeyNameLen := (MaxSubKeyNameLen + 1) * SizeOf(Char);
       // Each call to RegEnumKeyEx will use this buffer
       GetMem(Name, MaxSubKeyNameLen);
       // Enumerate subkey names
@@ -123,13 +125,13 @@ begin
         else
           Names[I] := '';
       end;
-      FreeMem(Name, MaxSubKeyNameLen);
+      FreeMem(Name);
     end;
     RegCloseKey(hkHandle);
   end;
 end;
 
-function RegKeyExists(RootKey: HKEY; const SubKeyName: UnicodeString): Boolean;
+function RegKeyExists(RootKey: HKEY; const SubKeyName: string): Boolean;
 var
   AccessFlags: REGSAM;
   hkHandle: HANDLE;
@@ -137,7 +139,7 @@ begin
   AccessFlags := KEY_READ;
   UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,  // HKEY   hKey
-    PWideChar(SubKeyName),          // LPCSTR lpSubKey
+    PChar(SubKeyName),              // LPCSTR lpSubKey
     0,                              // DWORD  ulOptions
     AccessFlags,                    // REGSAM samDesired
     hkHandle) = 0;                  // PHKEY  phkResult
@@ -145,8 +147,8 @@ begin
     RegCloseKey(hkHandle);
 end;
 
-function RegQueryStringValue(RootKey: HKEY; const SubKeyName, ValueName: UnicodeString;
-  var ResultStr: UnicodeString): Boolean;
+function RegQueryStringValue(RootKey: HKEY; const SubKeyName, ValueName: string;
+  var ResultStr: string): Boolean;
 var
   AccessFlags: REGSAM;
   hkHandle: HKEY;
@@ -156,7 +158,7 @@ begin
   AccessFlags := KEY_READ;
   UpdateRootKeyAndFlags(RootKey, AccessFlags);
   result := RegOpenKeyExW(RootKey,  // HKEY   hKey
-    PWideChar(SubKeyName),          // LPCSTR lpSubKey
+    PChar(SubKeyName),              // LPCSTR lpSubKey
     0,                              // DWORD  ulOptions
     AccessFlags,                    // REGSAM samDesired
     hkHandle) = 0;                  // PHKEY  phkResult
@@ -164,7 +166,7 @@ begin
   begin
     // First call: Get value size
     result := RegQueryValueExW(hkHandle,  // HKEY    hKey
-      PWideChar(ValueName),               // LPCSTR  lpValueName
+      PChar(ValueName),                   // LPCSTR  lpValueName
       nil,                                // LPDWORD lpReserved
       @ValueType,                         // LPDWORD lpType
       nil,                                // LPBYTE  lpData
@@ -177,26 +179,26 @@ begin
         GetMem(pData, ValueSize);
         // Second call: Get value data
         result := RegQueryValueExW(hkHandle,  // HKEY    hKey
-          PWideChar(ValueName),               // LPCSTR  lpValueName
+          PChar(ValueName),                   // LPCSTR  lpValueName
           nil,                                // LPDWORD lpReserved
           @ValueType,                         // LPDWORD lpType
           pData,                              // LPBYTE  lpData
           @ValueSize) = 0;                    // LPDWORD lpcbData
         if result then
           // Last char is null
-          if PWideChar(pData)[(ValueSize div SizeOf(WideChar)) - 1] = #0 then
-            ResultStr := PWideChar(pData)
+          if PChar(pData)[(ValueSize div SizeOf(Char)) - 1] = #0 then
+            ResultStr := PChar(pData)
           else
           begin
             // Last char not null: Return as null-terminated string
-            BufSize := ValueSize + SizeOf(WideChar);
+            BufSize := ValueSize + SizeOf(Char);
             GetMem(pBuf, BufSize);
             FillChar(pBuf^, BufSize, 0);
             Move(pData^, pBuf^, ValueSize);
-            ResultStr := PWideChar(pBuf);
-            FreeMem(pBuf, BufSize);
+            ResultStr := PChar(pBuf);
+            FreeMem(pBuf);
           end;
-        FreeMem(pData, ValueSize);
+        FreeMem(pData);
       end
       else
         result := false;

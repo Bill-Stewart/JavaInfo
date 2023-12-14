@@ -16,7 +16,7 @@
 }
 
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 
 unit wsJavaInfo;
 
@@ -28,24 +28,24 @@ type
 
 // Gets whether specified binary is 64-bit or not in Is64Bit parameter; returns
 // 0 for success, or non-zero for failure
-function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
+function wsIsBinary64Bit(FileName: string; var Is64Bit: Boolean): DWORD;
 
 // If Java installation found, returns path of Java home directory
-function wsGetJavaHome(): UnicodeString;
+function wsGetJavaHome(): string;
 
 // If Java installation found, returns path for jvm.dll
-function wsGetJavaJVMPath(): UnicodeString;
+function wsGetJavaJVMPath(): string;
 
 // If Java installation found, returns version number of java.exe as a string
 // (a.b.c.d)
-function wsGetJavaVersion(): UnicodeString;
+function wsGetJavaVersion(): string;
 
 // Returns true if a Java installation was found, or false otherwise
 function wsIsJavaInstalled(): Boolean;
 
 // Gets whether the installed Java version is at least the specified version
 // in the VersionOK parameter; returns true for success, or false otherwise
-function wsIsJavaMinimumVersion(Version: UnicodeString; var VersionOK: Boolean): Boolean;
+function wsIsJavaMinimumVersion(Version: string; var VersionOK: Boolean): Boolean;
 
 // Diagnostic: returns Java detection type
 function wsGetJavaDetectionType(): TJavaDetectionType;
@@ -58,13 +58,17 @@ uses
   wsUtilEnv,
   wsUtilFile,
   wsUtilReg,
-  wsUtilStr;
+  wsUtilStr,
+  wsUtilVer;
+
+type
+  TStringArray = array of string;
 
 var
-  JavaHome, JavaJVMPath, JavaVersion: UnicodeString;
+  JavaHome, JavaJVMPath, JavaVersion: string;
   JavaDetectionType: TJavaDetectionType;
 
-function wsIsBinary64Bit(FileName: UnicodeString; var Is64Bit: Boolean): DWORD;
+function wsIsBinary64Bit(FileName: string; var Is64Bit: Boolean): DWORD;
 var
   BinaryType: Word;
 begin
@@ -74,10 +78,10 @@ begin
 end;
 
 // Find Java home from environment variables
-function FindJavaHomeEnvironment(): UnicodeString;
+function FindJavaHomeEnvironment(): string;
 var
-  VarList: TArrayOfString;
-  I: LongInt;
+  VarList: TStringArray;
+  I: Integer;
 begin
   result := '';
   SetLength(VarList, 3);
@@ -93,7 +97,7 @@ begin
 end;
 
 // Find Java home by searching the Path
-function FindJavaHomePath(): UnicodeString;
+function FindJavaHomePath(): string;
 begin
   result := FileSearch('java.exe', GetEnvVar('Path'));
   if result <> '' then
@@ -116,12 +120,12 @@ end;
 // If starting subkey is 'SOFTWARE\IBM', this function should detect IBM JDK
 // (hopefully? I have no way to test, as I don't have a way to get an IBM
 // JRE/JDK on Windows)
-function FindJavaHomeRegistryJavaSoft(const StartingSubKey: UnicodeString): UnicodeString;
+function FindJavaHomeRegistryJavaSoft(const StartingSubKey: string): string;
 var
-  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  LatestSubKeyName, LatestVersion, ResultStr: string;
   RootKey: HKEY;
-  I, J: LongInt;
-  StartingSubKeys, SubKeyNames: TArrayOfString;
+  I, J: Integer;
+  StartingSubKeys, SubKeyNames: TStringArray;
   SubKeyExists: Boolean;
 begin
   result := '';
@@ -178,16 +182,16 @@ end;
 // Subkey: SOFTWARE\<vendor>\<javatype>\<version>\<buildtype>\MSI
 // String value: Path
 // Where
-//   <vendor> is one of: 'AdoptOpenJDK', 'Eclipse Foundation', or 'Semeru'
+//   <vendor> is one of: 'AdoptOpenJDK', 'Eclipse Adoptium', 'Eclipse Foundation', or 'Semeru'
 //   <javatype> is JDK or JRE
 //   <version> is the Java version string
 //   <buildtype> is usually 'hotspot' or 'openj9'
-function FindJavaHomeRegistryAdoptium(): UnicodeString;
+function FindJavaHomeRegistryAdoptium(): string;
 var
-  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  LatestSubKeyName, LatestVersion, ResultStr: string;
   RootKey: HKEY;
-  I, J, K: LongInt;
-  StartingSubKeys, SubKeyNames, SubSubKeyNames: TArrayOfString;
+  I, J, K: Integer;
+  StartingSubKeys, SubKeyNames, SubSubKeyNames: TStringArray;
   SubKeyExists: Boolean;
 begin
   result := '';
@@ -257,12 +261,12 @@ end;
 //   <javatype> is JDK
 //   <version> is the Java version string
 //   <buildtype> is 'hotspot'
-function FindJavaHomeRegistryMicrosoft(): UnicodeString;
+function FindJavaHomeRegistryMicrosoft(): string;
 var
-  LatestSubKeyName, LatestVersion, ResultStr: UnicodeString;
+  LatestSubKeyName, LatestVersion, ResultStr: string;
   RootKey: HKEY;
-  I, J, K: LongInt;
-  StartingSubKeys, SubKeyNames, SubSubKeyNames: TArrayOfString;
+  I, J, K: Integer;
+  StartingSubKeys, SubKeyNames, SubSubKeyNames: TStringArray;
   SubKeyExists: Boolean;
 begin
   result := '';
@@ -324,13 +328,13 @@ end;
 // <version> is the Java version
 // (This search would only occur if the Zulu installer doesn't update the
 // JavaSoft registry subkeys for some reason)
-function FindJavaHomeRegistryZulu(): UnicodeString;
+function FindJavaHomeRegistryZulu(): string;
 var
-  LatestSubKeyName, LatestVersion, SubKeyName, CurrentVersion, ResultStr: UnicodeString;
+  LatestSubKeyName, LatestVersion, SubKeyName, CurrentVersion, ResultStr: string;
   RootKey: HKEY;
   SubKeyExists: Boolean;
-  SubKeyNames: TArrayOfString;
-  I: LongInt;
+  SubKeyNames: TStringArray;
+  I: Integer;
 begin
   result := '';
   LatestSubKeyName := '';
@@ -381,9 +385,9 @@ begin
     result := ResultStr;
 end;
 
-function GetJavaVersion(const Home: UnicodeString): UnicodeString;
+function GetJavaVersion(const Home: string): string;
 var
-  Binary: UnicodeString;
+  Binary: string;
 begin
   result := '';
   if (Home <> '') and DirExists(Home) then
@@ -394,9 +398,9 @@ begin
   end;
 end;
 
-function GetJVMPath(const Home: UnicodeString): UnicodeString;
+function GetJVMPath(const Home: string): string;
 var
-  Binary: UnicodeString;
+  Binary: string;
 begin
   result := '';
   if (Home <> '') and DirExists(Home) then
@@ -410,10 +414,10 @@ begin
   end;
 end;
 
-procedure GetJavaDetail(var JavaHome, JavaJVMPath, JavaVersion: UnicodeString;
+procedure GetJavaDetail(var JavaHome, JavaJVMPath, JavaVersion: string;
   var JavaDetectionType: TJavaDetectionType);
 var
-  CurrentHome, CurrentVersion, LatestVersion, LatestHome: UnicodeString;
+  CurrentHome, CurrentVersion, LatestVersion, LatestHome: string;
   LatestDetectionType: TJavaDetectionType;
 begin
   // Initialize
@@ -516,17 +520,17 @@ begin
   end;
 end;
 
-function wsGetJavaHome(): UnicodeString;
+function wsGetJavaHome(): string;
 begin
   result := RemoveBackslashUnlessRoot(JavaHome);
 end;
 
-function wsGetJavaJVMPath(): UnicodeString;
+function wsGetJavaJVMPath(): string;
 begin
   result := JavaJVMPath;
 end;
 
-function wsGetJavaVersion(): UnicodeString;
+function wsGetJavaVersion(): string;
 begin
   result := JavaVersion;
 end;
@@ -536,10 +540,9 @@ begin
   result := (JavaHome <> '') and (JavaVersion <> '');
 end;
 
-function wsIsJavaMinimumVersion(Version: UnicodeString; var VersionOK: Boolean): Boolean;
+function wsIsJavaMinimumVersion(Version: string; var VersionOK: Boolean): Boolean;
 begin
-  Version := ExpandVersionString(Version);
-  result := Version <> '';
+  result := TestVersionString(Version);
   if result then
     VersionOK := CompareVersionStrings(JavaVersion, Version) >= 0;
 end;

@@ -1,16 +1,24 @@
 # JavaInfo.dll Version History
 
+## 1.6.0.0 (2023-12-14)
+
+* Improved and simplified version checking code.
+
+* Corrected file type in DLL resource file.
+
+* Switched to FPC `UNICODESTRINGS` mode.
+
 ## 1.5.1.0 (2023-03-07)
 
 * Fixed bug in `jvm.dll` path detection.
 
 ## 1.5.0.0 (2023-02-27)
 
-* Added `GetJavaJVMPath()` function.
+* Added `GetJavaJVMPath` function.
 
 * Added `--javadll` (`-d`) option to GetJavaInfo utility.
 
-* Updated all sample code to add `GetJavaJVMPath()` function.
+* Updated all sample code to add `GetJavaJVMPath` function.
 
 ## 1.4.0.0 (2023-01-12)
 
@@ -46,11 +54,11 @@
 
 ## 1.2.0.0 (2021-01-15)
 
-* Added the `IsJavaMinimumVersion()` function.
+* Added the `IsJavaMinimumVersion` function.
 
 * Added GetJavaInfo.exe that implements the JavaInfo.dll code as a console (command-line) utility. Run `GetJavaInfo -h` to display the help information.
 
-* Enhanced the `JavaInfo.iss` Inno Setup sample script to use the `IsJavaMinimumVersion()` function.
+* Enhanced the `JavaInfo.iss` Inno Setup sample script to use the `IsJavaMinimumVersion` function.
 
 * Added sample PowerShell script to illustrate using .NET P/Invoke to call the JavaInfo.dll functions.
 
@@ -86,7 +94,7 @@
 
 ## 0.0.0.3 (2020-12-31)
 
-* Changed `IsJava64Bit()` function to `IsBinary64Bit()` function. The reason for this change is that it is useful to determine whether a binary (i.e., a `.exe` or `.dll` file) is 64-bit even when Java is not detected. For example, if the `IsJavaInstalled()` function returns 0 but an instance of Java is present, you can use the `IsBinary64Bit()` function to determine whether the Java instance is 64-bit if you know its path. An added benefit is that the `IsBinary64Bit()` function works on any Windows binary, not just Java binaries.
+* Changed `IsJava64Bit` function to `IsBinary64Bit` function. The reason for this change is that it is useful to determine whether a binary (i.e., a `.exe` or `.dll` file) is 64-bit even when Java is not detected. For example, if the `IsJavaInstalled` function returns 0 but an instance of Java is present, you can use the `IsBinary64Bit` function to determine whether the Java instance is 64-bit if you know its path. An added benefit is that the `IsBinary64Bit` function works on any Windows binary, not just Java binaries.
 
 * Included Inno Setup (https://www.jrsoftware.org/isinfo.php) sample script (`JavaInfo.iss`).
 

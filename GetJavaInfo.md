@@ -16,7 +16,7 @@ https://github.com/Bill-Stewart/JavaInfo/releases/
 
 ## Description
 
-GetJavaInfo is a command line utility that uses the same code as JavaInfo.dll to detect Java installation details. GetJavaInfo does not require JavaInfo.dll to run.
+GetJavaInfo is a command line utility that uses the same code as JavaInfo.dll to detect Java installation details. GetJavaInfo does not require JavaInfo.dll.
 
 ## Usage
 

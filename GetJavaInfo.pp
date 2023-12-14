@@ -16,88 +16,85 @@
 }
 
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 {$R *.res}
 {$APPTYPE CONSOLE}
 
 program GetJavaInfo;
 
+// wargcv/wgetopts - https://github.com/Bill-Stewart/wargcv
 uses
-  getopts,
   Windows,
+  wargcv,
+  wgetopts,
   wsJavaInfo,
   wsUtilFile,
   wsUtilStr;
 
-const
-  NEWLINE: UnicodeString = #13 + #10;
-
 type
   TCommandLine = object
     ErrorCode:         Word;
-    ErrorMessage:      UnicodeString;
-    ArgHelp:           Boolean;        // --help/-h
-    ArgQuiet:          Boolean;        // --quiet/-q
-    ArgVersion:        Boolean;        // --version/v
-    ArgJavaIs64Bit:    Boolean;        // --javais64bit/-b
-    ArgJavaHome:       Boolean;        // --javahome/-H
-    ArgJavaDLL:        Boolean;        // --javadll/-d
-    ArgJavaInstalled:  Boolean;        // --javainstalled/-i
-    ArgJavaMinVersion: UnicodeString;  // --javaminversion/-m
-    ArgJavaVersion:    Boolean;        // --javaversion/-V
+    ErrorMessage:      string;
+    ArgHelp:           Boolean;  // --help/-h
+    ArgQuiet:          Boolean;  // --quiet/-q
+    ArgVersion:        Boolean;  // --version/v
+    ArgJavaIs64Bit:    Boolean;  // --javais64bit/-b
+    ArgJavaHome:       Boolean;  // --javahome/-H
+    ArgJavaDLL:        Boolean;  // --javadll/-d
+    ArgJavaInstalled:  Boolean;  // --javainstalled/-i
+    ArgJavaMinVersion: string;   // --javaminversion/-m
+    ArgJavaVersion:    Boolean;  // --javaversion/-V
     procedure Parse();
   end;
 
 var
   CommandLine: TCommandLine;
   JavaDetected, JavaIs64Bit, VersionOK: Boolean;
-  JavaHome, JavaJVMPath, JavaVersion, OutputStr: UnicodeString;
+  JavaHome, JavaJVMPath, JavaVersion, OutputStr: string;
 
 procedure Usage();
-const
-  NEWLINE: UnicodeString = #13 + #10;
 var
-  UsageText: UnicodeString;
+  UsageText: string;
 begin
-  UsageText := 'GetJavaInfo - Copyright 2020-2023 by Bill Stewart (bstewart at iname.com)' + NEWLINE
-    + 'This is free software and comes with ABSOLUTELY NO WARRANTY.' + NEWLINE
-    + NEWLINE
-    + 'Usage: GetJavaInfo [--javainstalled | --javahome | --javaversion |' + NEWLINE
-    + '       --javais64bit] [--quiet]' + NEWLINE
-    + 'or:    GetJavaInfo --javaminversion <version> [--quiet]' + NEWLINE
-    + NEWLINE
-    + 'Without parameters, outputs Java installation details.' + NEWLINE
-    + NEWLINE
-    + 'Parameter         Abbrev.  Description' + NEWLINE
-    + '----------------  -------  -------------------------------------' + NEWLINE
-    + '--javainstalled   -i       Tests if Java is installed' + NEWLINE
-    + '--javahome        -H       Outputs Java home directory' + NEWLINE
-    + '--javadll         -d       Outputs jvm.dll path' + NEWLINE
-    + '--javaversion     -V       Outputs Java version' + NEWLINE
-    + '--javais64bit     -b       Tests if Java is 64-bit' + NEWLINE
-    + '--version         -v       Outputs this program''s version number' + NEWLINE
-    + '--javaminversion  -m       Tests for a minimum version of Java' + NEWLINE
-    + '--quiet           -q       Suppresses output from other options' + NEWLINE
-    + '--help            -h       Outputs this help information' + NEWLINE
-    + NEWLINE
-    + 'Parameters can be spelled out (e.g., --javahome) or specified in abbreviated' + NEWLINE
-    + 'form (e.g., -H). Parameters are case-sensitive.' + NEWLINE
-    + NEWLINE
-    + 'General exit codes:' + NEWLINE
-    + '* 0 = no error/Java is installed' + NEWLINE
-    + '* 2 = Java is not installed' + NEWLINE
-    + '* 87 = invalid parameter on command line' + NEWLINE
-    + NEWLINE
-    + 'Exit codes with --javais64bit (-b) parameter:' + NEWLINE
-    + '* 0 = Java is not 64-bit' + NEWLINE
-    + '* 1 = Java is 64-bit' + NEWLINE
-    + NEWLINE
-    + 'Exit codes with --javaminversion (-m) parameter:' + NEWLINE
-    + '* 0 = Java version is < specified version' + NEWLINE
-    + '* 1 = Java version is >= specified version' + NEWLINE
-    + NEWLINE
-    + 'Version number for --javaminversion (-m) parameter uses the following format:' + NEWLINE
-    + 'n[.n[.n[.n]]]' + NEWLINE
+  UsageText := 'GetJavaInfo - Copyright 2020-2023 by Bill Stewart (bstewart at iname.com)' + sLineBreak
+    + 'This is free software and comes with ABSOLUTELY NO WARRANTY.' + sLineBreak
+    + sLineBreak
+    + 'Usage: GetJavaInfo [--javainstalled | --javahome | --javaversion |' + sLineBreak
+    + '       --javais64bit] [--quiet]' + sLineBreak
+    + 'or:    GetJavaInfo --javaminversion <version> [--quiet]' + sLineBreak
+    + sLineBreak
+    + 'Without parameters, outputs Java installation details.' + sLineBreak
+    + sLineBreak
+    + 'Parameter         Abbrev.  Description' + sLineBreak
+    + '----------------  -------  -------------------------------------' + sLineBreak
+    + '--javainstalled   -i       Tests if Java is installed' + sLineBreak
+    + '--javahome        -H       Outputs Java home directory' + sLineBreak
+    + '--javadll         -d       Outputs jvm.dll path' + sLineBreak
+    + '--javaversion     -V       Outputs Java version' + sLineBreak
+    + '--javais64bit     -b       Tests if Java is 64-bit' + sLineBreak
+    + '--version         -v       Outputs this program''s version number' + sLineBreak
+    + '--javaminversion  -m       Tests for a minimum version of Java' + sLineBreak
+    + '--quiet           -q       Suppresses output from other options' + sLineBreak
+    + '--help            -h       Outputs this help information' + sLineBreak
+    + sLineBreak
+    + 'Parameters can be spelled out (e.g., --javahome) or specified in abbreviated' + sLineBreak
+    + 'form (e.g., -H). Parameters are case-sensitive.' + sLineBreak
+    + sLineBreak
+    + 'General exit codes:' + sLineBreak
+    + '* 0 = no error/Java is installed' + sLineBreak
+    + '* 2 = Java is not installed' + sLineBreak
+    + '* 87 = invalid parameter on command line' + sLineBreak
+    + sLineBreak
+    + 'Exit codes with --javais64bit (-b) parameter:' + sLineBreak
+    + '* 0 = Java is not 64-bit' + sLineBreak
+    + '* 1 = Java is 64-bit' + sLineBreak
+    + sLineBreak
+    + 'Exit codes with --javaminversion (-m) parameter:' + sLineBreak
+    + '* 0 = Java version is < specified version' + sLineBreak
+    + '* 1 = Java version is >= specified version' + sLineBreak
+    + sLineBreak
+    + 'Version number for --javaminversion (-m) parameter uses the following format:' + sLineBreak
+    + 'n[.n[.n[.n]]]' + sLineBreak
     + '(i.e., up to 4 numbers separated by dots)';
   WriteLn(UsageText);
 end;
@@ -106,7 +103,7 @@ procedure TCommandLine.Parse();
 var
   LongOpts: array[1..10] of TOption;
   Opt: Char;
-  I: LongInt;
+  I: Integer;
 begin
   // Set up array of options; requires final option with empty name;
   // set Value member to specify short option match for GetLongOps
@@ -192,7 +189,7 @@ begin
   ArgJavaInstalled := false;  // --javainstalled/-i
   ArgJavaMinVersion := '';    // --javaminversion/-m
   ArgJavaVersion := false;    // --javaversion/-V
-  OptErr := false;  // no error outputs from getopts
+  OptErr := false;  // no error outputs from wgetopts
   repeat
     Opt := GetLongOpts('bdHhim:qVv', @LongOpts, I);
     case Opt of
@@ -201,7 +198,7 @@ begin
       'H': ArgJavaHome := true;
       'h': ArgHelp := true;
       'i': ArgJavaInstalled := true;
-      'm': ArgJavaMinVersion := StringToUnicodeString(OptArg, CP_ACP);
+      'm': ArgJavaMinVersion := OptArg;
       'q': ArgQuiet := true;
       'V': ArgJavaVersion := true;
       'v': ArgVersion := true;
@@ -214,7 +211,7 @@ begin
   until Opt = EndOfOptions;
 end;
 
-function BoolToStr(const B: Boolean): UnicodeString;
+function BoolToStr(const B: Boolean): string;
 begin
   if B then
     result := 'Yes'
@@ -243,7 +240,7 @@ begin
   // --version/-v
   if CommandLine.ArgVersion then
   begin
-    WriteLn(GetFileVersion(GetExecutablePath()));
+    WriteLn(GetFileVersion(ParamStr(0)));
     exit();
   end;
 
@@ -336,9 +333,9 @@ begin
 
   if not (CommandLine.ArgJavaHome or CommandLine.ArgJavaDLL or CommandLine.ArgJavaVersion) then
   begin
-    OutputStr := 'Java home:' + #9 + JavaHome + NEWLINE
-      + 'jvm.dll path:' + #9 + JavaJVMPath + NEWLINE
-      + 'Java version:' + #9 + JavaVersion + NEWLINE
+    OutputStr := 'Java home:' + #9 + JavaHome + sLineBreak
+      + 'jvm.dll path:' + #9 + JavaJVMPath + sLineBreak
+      + 'Java version:' + #9 + JavaVersion + sLineBreak
       + 'Java is 64-bit:' + #9 + BoolToStr(JavaIs64Bit);
     WriteLn(OutputStr);
     exit();

@@ -15,9 +15,8 @@
 
 }
 
-
 {$MODE OBJFPC}
-{$H+}
+{$MODESWITCH UNICODESTRINGS}
 
 unit wsUtilEnv;
 
@@ -25,58 +24,62 @@ interface
 
 // Expands environment variable references (e.g., %varname%) in the named
 // string and returns the resulting string with expanded references
-function ExpandEnvStrings(const Name: UnicodeString): UnicodeString;
+function ExpandEnvStrings(const Name: string): string;
 
 // Gets the value of the named environment variable; returns an empty string
 // if the variable doesn't exist
-function GetEnvVar(const Name: UnicodeString): UnicodeString;
+function GetEnvVar(const Name: string): string;
 
 implementation
 
 uses
   Windows;
 
-function ExpandEnvStrings(const Name: UnicodeString): UnicodeString;
+function ExpandEnvStrings(const Name: string): string;
 var
   NumChars, BufSize: DWORD;
-  pBuffer: PWideChar;
+  pBuffer: PChar;
 begin
   result := '';
   // Get number of characters needed for buffer
-  NumChars := ExpandEnvironmentStringsW(PWideChar(Name),  // LPCWSTR lpSrc
-    nil,                                                  // LPWSTR  lpDst
-    0);                                                   // DWORD   nSize
+  NumChars := ExpandEnvironmentStringsW(PChar(Name),  // LPCWSTR lpSrc
+    nil,                                              // LPWSTR  lpDst
+    0);                                               // DWORD   nSize
   if NumChars > 0 then
   begin
-    BufSize := NumChars * SizeOf(WideChar);
+    BufSize := NumChars * SizeOf(Char);
     GetMem(pBuffer, BufSize);
-    if ExpandEnvironmentStringsW(PWideChar(Name),  // LPCWSTR lpSrc
-      pBuffer,                                     // LPWSTR  lpDst
-      NumChars) > 0 then                           // DWORD   nSize
+    if ExpandEnvironmentStringsW(PChar(Name),  // LPCWSTR lpSrc
+      pBuffer,                                 // LPWSTR  lpDst
+      NumChars) > 0 then                       // DWORD   nSize
+    begin
       result := pBuffer;
-    FreeMem(pBuffer, BufSize);
+    end;
+    FreeMem(pBuffer);
   end;
 end;
 
-function GetEnvVar(const Name: UnicodeString): UnicodeString;
+function GetEnvVar(const Name: string): string;
 var
   NumChars, BufSize: DWORD;
-  pBuffer: PWideChar;
+  pBuffer: PChar;
 begin
   result := '';
   // Get number of characters needed for buffer
-  NumChars := GetEnvironmentVariableW(PWideChar(Name),  // LPCWSTR lpName
-    nil,                                                // LPWSTR  lpBuffer
-    0);                                                 // DWORD   nSize
+  NumChars := GetEnvironmentVariableW(PChar(Name),  // LPCWSTR lpName
+    nil,                                            // LPWSTR  lpBuffer
+    0);                                             // DWORD   nSize
   if NumChars > 0 then
   begin
-    BufSize := NumChars * SizeOf(WideChar);
+    BufSize := NumChars * SizeOf(Char);
     GetMem(pBuffer, BufSize);
-    if GetEnvironmentVariableW(PWideChar(Name),  // LPCWSTR lpName
-      pBuffer,                                   // LPWSTR  lpBuffer
-      NumChars) > 0 then                         // DWORD   nSize
+    if GetEnvironmentVariableW(PChar(Name),  // LPCWSTR lpName
+      pBuffer,                               // LPWSTR  lpBuffer
+      NumChars) > 0 then                     // DWORD   nSize
+    begin
       result := pBuffer;
-    FreeMem(pBuffer, BufSize);
+    end;
+    FreeMem(pBuffer);
   end;
 end;
 
